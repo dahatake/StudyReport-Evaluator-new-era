@@ -1,0 +1,93 @@
+{
+  "schema_version": "1.0",
+  "run_id": "SYSTEM-TEST-REALDATA-20260901-0912",
+  "source_commit": "3f4227e15d725d2a010b4c6a9a94eb78b20b8573",
+  "source_tracked_clean_at_final_build": true,
+  "environment": {
+    "os_description": "Microsoft Windows 10.0.29648",
+    "architecture": "X64",
+    "powershell_version": "7.6.5",
+    "powershell_edition": "Core",
+    "dotnet_sdk_version": "10.0.400",
+    "dotnet_runtime_version": "10.0.11",
+    "logical_processor_count": 20
+  },
+  "input": {
+    "logical_name": "attached-realdata.xlsx",
+    "size_bytes": 470806,
+    "sha256": "73883CE3BBB86B93AF8825C04F596434CF82A2C6309A7F4CC5835AE8F3E542EA",
+    "unchanged_after_run": true
+  },
+  "question_selection": {
+    "strategy": "all-enabled-application-suggestions",
+    "question_count": 5,
+    "primary_columns": ["F", "G", "H", "I", "J"],
+    "supporting_columns_by_primary": {
+      "J": ["K"]
+    },
+    "question_text_included": false
+  },
+  "application_run": {
+    "live_ai_invoked": false,
+    "evaluation_semantics": "DETERMINISTIC_RANGE_MIDPOINT_TECHNICAL_TEST_ONLY_NOT_EDUCATIONAL_GRADING",
+    "planned": 2650,
+    "completed": 2650,
+    "succeeded": 2031,
+    "empty": 619,
+    "failed": 0,
+    "cancelled": 0,
+    "elapsed_seconds": 78.490060,
+    "result": "PASS"
+  },
+  "output": {
+    "path": "work/20260901-realdata-application-result.xlsx",
+    "size_bytes": 786819,
+    "sha256": "913F1F0F4E94A8E47A74182C171903DC2EA2038AF48C0AA214DDBD7F83A1CCD3",
+    "worksheet_count": 4,
+    "data_row_count": 530,
+    "column_count": 61,
+    "formula_count": 11130,
+    "formula_error_count": 0,
+    "open_xml_schema_error_count": 0,
+    "atomic_commit": "SUCCESS",
+    "result": "PASS"
+  },
+  "normal_application_startup": {
+    "executed": 1,
+    "passed": 1,
+    "failed": 0,
+    "result": "PASS"
+  },
+  "release_build": {
+    "locked_restore": "PASS",
+    "warning_count": 0,
+    "error_count": 0,
+    "result": "PASS"
+  },
+  "regression_tests": {
+    "total": 483,
+    "passed": 483,
+    "failed": 0,
+    "result": "PASS"
+  },
+  "external_excel_roundtrip": {
+    "spreadsheet": "Microsoft Excel 16.0",
+    "formula_count": 11130,
+    "formula_error_count": 0,
+    "schema_error_id": "Sem_MissingIndexedElement",
+    "schema_error_part": "/xl/calcChain.xml",
+    "latest_observed_schema_error_count": 8392,
+    "source_output_calculation_chain_present": false,
+    "calculation_chain_removal_probe_schema_error_count": 0,
+    "root_cause_confirmed": true,
+    "result": "FAIL_STRICT_OPENXML_SCHEMA_AFTER_EXCEL_SAVE"
+  },
+  "privacy": {
+    "cell_content_included": false,
+    "header_content_included": false,
+    "worksheet_names_from_input_included": false,
+    "private_paths_included": false,
+    "credentials_included": false
+  },
+  "overall": "FAIL_EXTERNAL_EXCEL_ROUNDTRIP_SCHEMA_COMPATIBILITY_PRIMARY_APPLICATION_OUTPUT_PASS"
+}

@@ -1,0 +1,385 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:study-report-evaluator:report-definition:v1",
+  "title": "StudyReport Evaluator report definition v1",
+  "$comment": "This schema validates the persisted ReportDefinition shape only. ADR-0009 requires a mandatory post-schema validator for configured scalar limits, ID uniqueness/references, formula AST, BCP 47, generated result-schema closure and maximum size, request/context/Excel/attempt budgets. RunSnapshot immutability is enforced by orchestration after this definition is validated.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "report_type_id",
+    "revision",
+    "target_language",
+    "limits",
+    "reason_policy",
+    "evidence_policy",
+    "missing_flags",
+    "questions",
+    "evaluators",
+    "rounding_digits",
+    "aggregate_formula"
+  ],
+  "properties": {
+    "schema": {
+      "const": "urn:study-report-evaluator:report-definition:v1"
+    },
+    "report_type_id": {
+      "$ref": "#/$defs/stableId"
+    },
+    "revision": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$"
+    },
+    "target_language": {
+      "$ref": "#/$defs/languageTag"
+    },
+    "limits": {
+      "$ref": "#/$defs/reportLimits"
+    },
+    "reason_policy": {
+      "$ref": "#/$defs/reasonPolicy"
+    },
+    "evidence_policy": {
+      "$ref": "#/$defs/evidencePolicy"
+    },
+    "missing_flags": {
+      "type": "array",
+      "maxItems": 32767,
+      "items": {
+        "$ref": "#/$defs/missingFlag"
+      }
+    },
+    "questions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32767,
+      "items": {
+        "$ref": "#/$defs/question"
+      }
+    },
+    "evaluators": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32767,
+      "items": {
+        "$ref": "#/$defs/evaluator"
+      }
+    },
+    "rounding_digits": {
+      "type": "integer"
+    },
+    "aggregate_formula": {
+      "$ref": "#/$defs/formulaExpression"
+    }
+  },
+  "$defs": {
+    "nonEmptyText": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32767
+    },
+    "stableId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32767,
+      "pattern": "^[A-Za-z][A-Za-z0-9._-]*$"
+    },
+    "flagId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32767,
+      "pattern": "^[A-Z][A-Z0-9_]*$"
+    },
+    "languageTag": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "pattern": "^[A-Za-z0-9]{1,8}(?:-[A-Za-z0-9]{1,8})*$"
+    },
+    "reportLimits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_rubric_items_per_evaluator",
+        "evaluator_id_max_scalars",
+        "item_id_max_scalars",
+        "reason_max_scalars",
+        "evidence_max_scalars",
+        "max_missing_flags_per_item",
+        "reason_source_quote_rejection_threshold_scalars"
+      ],
+      "properties": {
+        "max_rubric_items_per_evaluator": {
+          "$ref": "#/$defs/positiveHardBound"
+        },
+        "evaluator_id_max_scalars": {
+          "$ref": "#/$defs/positiveHardBound"
+        },
+        "item_id_max_scalars": {
+          "$ref": "#/$defs/positiveHardBound"
+        },
+        "reason_max_scalars": {
+          "$ref": "#/$defs/positiveHardBound"
+        },
+        "evidence_max_scalars": {
+          "$ref": "#/$defs/positiveHardBound"
+        },
+        "max_missing_flags_per_item": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 32767
+        },
+        "reason_source_quote_rejection_threshold_scalars": {
+          "$ref": "#/$defs/positiveHardBound"
+        }
+      }
+    },
+    "positiveHardBound": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 32767
+    },
+    "reasonPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requirement", "instruction"],
+      "properties": {
+        "requirement": {
+          "enum": ["required", "optional"]
+        },
+        "instruction": {
+          "$ref": "#/$defs/nonEmptyText"
+        }
+      }
+    },
+    "evidencePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "instruction"],
+      "properties": {
+        "mode": {
+          "const": "exact-quote-or-no-evidence"
+        },
+        "instruction": {
+          "$ref": "#/$defs/nonEmptyText"
+        }
+      }
+    },
+    "missingFlag": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "display_name", "condition"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/flagId"
+        },
+        "display_name": {
+          "$ref": "#/$defs/nonEmptyText"
+        },
+        "condition": {
+          "$ref": "#/$defs/nonEmptyText"
+        }
+      }
+    },
+    "question": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "question_id",
+        "display_name",
+        "question_text",
+        "prompt_template",
+        "weight",
+        "evaluator_ids"
+      ],
+      "properties": {
+        "question_id": {
+          "$ref": "#/$defs/stableId"
+        },
+        "display_name": {
+          "$ref": "#/$defs/nonEmptyText"
+        },
+        "question_text": {
+          "$ref": "#/$defs/nonEmptyText"
+        },
+        "prompt_template": {
+          "$ref": "#/$defs/nonEmptyText"
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 0
+        },
+        "evaluator_ids": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32767,
+          "items": {
+            "$ref": "#/$defs/stableId"
+          }
+        }
+      }
+    },
+    "evaluator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evaluator_id", "purpose", "target_role", "items"],
+      "properties": {
+        "evaluator_id": {
+          "$ref": "#/$defs/stableId"
+        },
+        "purpose": {
+          "$ref": "#/$defs/nonEmptyText"
+        },
+        "target_role": {
+          "enum": ["main-answer"]
+        },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32767,
+          "items": {
+            "$ref": "#/$defs/rubricItem"
+          }
+        }
+      }
+    },
+    "rubricItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "item_id",
+        "description",
+        "minimum_score",
+        "maximum_score",
+        "weight",
+        "anchors"
+      ],
+      "properties": {
+        "item_id": {
+          "$ref": "#/$defs/stableId"
+        },
+        "description": {
+          "$ref": "#/$defs/nonEmptyText"
+        },
+        "minimum_score": {
+          "type": "number"
+        },
+        "maximum_score": {
+          "type": "number"
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 0
+        },
+        "anchors": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32767,
+          "items": {
+            "$ref": "#/$defs/scoreAnchor"
+          }
+        }
+      }
+    },
+    "scoreAnchor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["score", "description"],
+      "properties": {
+        "score": {
+          "type": "number"
+        },
+        "description": {
+          "$ref": "#/$defs/nonEmptyText"
+        }
+      }
+    },
+    "formulaExpression": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "setting_id"],
+          "properties": {
+            "kind": { "const": "setting-ref" },
+            "setting_id": {
+              "enum": [
+                "adopted-score-range",
+                "item-weight-range",
+                "question-subtotal-range",
+                "question-weight-range",
+                "rounding-digits"
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "value"],
+          "properties": {
+            "kind": { "const": "boolean" },
+            "value": { "type": "boolean" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": {
+            "kind": { "const": "empty" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "token"],
+          "properties": {
+            "kind": { "const": "token" },
+            "token": { "$ref": "#/$defs/stableId" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "name", "arguments"],
+          "properties": {
+            "kind": { "const": "function" },
+            "name": {
+              "enum": [
+                "IF",
+                "IFERROR",
+                "AND",
+                "OR",
+                "ISNUMBER",
+                "SUM",
+                "SUMPRODUCT",
+                "COUNT",
+                "ROUND"
+              ]
+            },
+            "arguments": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 32767,
+              "items": { "$ref": "#/$defs/formulaExpression" }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "operator", "left", "right"],
+          "properties": {
+            "kind": { "const": "binary" },
+            "operator": {
+              "enum": ["=", "<>", "<", "<=", ">", ">=", "+", "-", "*", "/"]
+            },
+            "left": { "$ref": "#/$defs/formulaExpression" },
+            "right": { "$ref": "#/$defs/formulaExpression" }
+          }
+        }
+      ]
+    }
+  }
+}

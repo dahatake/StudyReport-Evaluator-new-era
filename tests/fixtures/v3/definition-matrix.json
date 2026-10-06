@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "3.0",
+  "seed": 20260901,
+  "generation": "cartesian-product",
+  "questionCounts": [1, 2, 10],
+  "evaluatorCountsPerQuestion": [1, 2, 5],
+  "criterionCountsPerEvaluator": [1, 4, 20],
+  "expectedScenarioCount": 27,
+  "columnPattern": {
+    "primary": "F",
+    "supporting": ["K", "L"]
+  },
+  "rangePattern": {
+    "evaluator": { "minimum": 0, "maximum": 10 },
+    "criterionOverrideEvery": 2,
+    "criterionOverride": { "minimum": 1, "maximum": 10 }
+  },
+  "weightPattern": "positive-index",
+  "typePattern": ["KNOWLEDGE_COVERAGE", "CUSTOM_PROMPT"]
+}

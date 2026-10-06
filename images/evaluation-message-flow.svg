@@ -1,0 +1,159 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 1280" role="img" aria-labelledby="title desc">
+  <title id="title">StudyReport Evaluatorの認証・評価・checkpoint・final出力message flow</title>
+  <desc id="desc">利用者、Avalonia UIとworkflow、Coreとworkbook処理、GitHub Copilot SDK、同梱Copilot CLI、GitHub Copilotサービス間の時系列を示す。明示loginまたは状態確認、run準備、各一時session、closed tool callback、結果検証、checkpoint、final workbook検証と保存を含む。</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0L10 5L0 10z" fill="#334155"/>
+    </marker>
+    <style>
+      .title { font: 700 27px "Segoe UI", "Yu Gothic UI", sans-serif; fill: #0f172a; }
+      .subtitle { font: 400 14px "Segoe UI", "Yu Gothic UI", sans-serif; fill: #475569; }
+      .lane-a { fill: #f8fafc; }
+      .lane-b { fill: #eef2ff; }
+      .lane-c { fill: #ecfdf5; }
+      .lane-d { fill: #fff7ed; }
+      .lane-e { fill: #f0fdf4; }
+      .lane-f { fill: #eff6ff; }
+      .lane-head { stroke: #cbd5e1; stroke-width: 1.5; }
+      .lane-title { font: 700 15px "Segoe UI", "Yu Gothic UI", sans-serif; fill: #0f172a; }
+      .lane-sub { font: 400 11.5px Consolas, "Cascadia Mono", monospace; fill: #475569; }
+      .life { stroke: #94a3b8; stroke-width: 1.3; stroke-dasharray: 6 6; }
+      .phase-auth { fill: #fefce8; stroke: #eab308; stroke-width: 1; }
+      .phase-run { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1; }
+      .phase-loop { fill: #f5f3ff; stroke: #8b5cf6; stroke-width: 1.2; }
+      .phase-final { fill: #ecfeff; stroke: #06b6d4; stroke-width: 1; }
+      .phase-title { font: 700 14px "Segoe UI", "Yu Gothic UI", sans-serif; fill: #334155; }
+      .arrow { fill: none; stroke: #334155; stroke-width: 1.9; marker-end: url(#arrow); }
+      .return { fill: none; stroke: #64748b; stroke-width: 1.6; stroke-dasharray: 5 4; marker-end: url(#arrow); }
+      .network { fill: none; stroke: #2563eb; stroke-width: 2; marker-end: url(#arrow); }
+      .storage { fill: none; stroke: #16a34a; stroke-width: 2; marker-end: url(#arrow); }
+      .message { font: 600 12px "Segoe UI", "Yu Gothic UI", sans-serif; fill: #1e293b; }
+      .detail { font: 400 11.5px "Segoe UI", "Yu Gothic UI", sans-serif; fill: #475569; }
+      .note { fill: #ffffff; stroke: #94a3b8; stroke-width: 1.2; }
+      .note-text { font: 400 11.5px "Segoe UI", "Yu Gothic UI", sans-serif; fill: #334155; }
+      .loop { fill: none; stroke: #7c3aed; stroke-width: 2; }
+      .loop-text { font: 700 12px "Segoe UI", "Yu Gothic UI", sans-serif; fill: #6d28d9; }
+      .footer { font: 400 11px "Segoe UI", "Yu Gothic UI", sans-serif; fill: #64748b; }
+    </style>
+  </defs>
+
+  <rect width="1500" height="1280" fill="#ffffff"/>
+  <text x="30" y="40" class="title">Message flow：明示認証から一時session、checkpoint、final出力まで</text>
+  <text x="30" y="67" class="subtitle">時間は上から下へ進みます。破線は応答、青はnetwork、緑はworkbook永続化です。</text>
+
+  <rect x="20" y="90" width="210" height="1130" class="lane-a"/>
+  <rect x="245" y="90" width="255" height="1130" class="lane-b"/>
+  <rect x="515" y="90" width="270" height="1130" class="lane-c"/>
+  <rect x="800" y="90" width="210" height="1130" class="lane-d"/>
+  <rect x="1025" y="90" width="205" height="1130" class="lane-e"/>
+  <rect x="1245" y="90" width="235" height="1130" class="lane-f"/>
+
+  <rect x="20" y="90" width="210" height="70" class="lane-a lane-head"/>
+  <rect x="245" y="90" width="255" height="70" class="lane-b lane-head"/>
+  <rect x="515" y="90" width="270" height="70" class="lane-c lane-head"/>
+  <rect x="800" y="90" width="210" height="70" class="lane-d lane-head"/>
+  <rect x="1025" y="90" width="205" height="70" class="lane-e lane-head"/>
+  <rect x="1245" y="90" width="235" height="70" class="lane-f lane-head"/>
+
+  <text x="125" y="118" text-anchor="middle" class="lane-title">利用者</text>
+  <text x="125" y="141" text-anchor="middle" class="lane-sub">teacher / reviewer</text>
+  <text x="372" y="118" text-anchor="middle" class="lane-title">UI / Workflow</text>
+  <text x="372" y="141" text-anchor="middle" class="lane-sub">Execution VM / Orchestrator</text>
+  <text x="650" y="118" text-anchor="middle" class="lane-title">Core / Workbook</text>
+  <text x="650" y="141" text-anchor="middle" class="lane-sub">validation / Open XML</text>
+  <text x="905" y="118" text-anchor="middle" class="lane-title">Copilot SDK</text>
+  <text x="905" y="141" text-anchor="middle" class="lane-sub">GitHub.Copilot.SDK</text>
+  <text x="1127" y="118" text-anchor="middle" class="lane-title">同梱CLI</text>
+  <text x="1127" y="141" text-anchor="middle" class="lane-sub">copilot.exe / stdio</text>
+  <text x="1362" y="118" text-anchor="middle" class="lane-title">GitHub Copilot</text>
+  <text x="1362" y="141" text-anchor="middle" class="lane-sub">remote service</text>
+
+  <line x1="125" y1="160" x2="125" y2="1200" class="life"/>
+  <line x1="372" y1="160" x2="372" y2="1200" class="life"/>
+  <line x1="650" y1="160" x2="650" y2="1200" class="life"/>
+  <line x1="905" y1="160" x2="905" y2="1200" class="life"/>
+  <line x1="1127" y1="160" x2="1127" y2="1200" class="life"/>
+  <line x1="1362" y1="160" x2="1362" y2="1200" class="life"/>
+
+  <rect x="32" y="174" width="1436" height="210" rx="10" class="phase-auth" opacity="0.45"/>
+  <text x="47" y="198" class="phase-title">A. 本人login（必要時）と状態確認は別の明示操作</text>
+
+  <path d="M125 225H372" class="arrow"/>
+  <text x="248" y="216" text-anchor="middle" class="message">「GitHubにログイン」</text>
+  <path d="M372 250H1127" class="arrow"/>
+  <text x="750" y="241" text-anchor="middle" class="message">検証済みCLIを固定引数で直接起動</text>
+  <text x="750" y="264" text-anchor="middle" class="detail">--no-auto-update --log-level none login --web-flow</text>
+  <path d="M1127 282H1362" class="network"/>
+  <text x="1245" y="274" text-anchor="middle" class="message">本人認証</text>
+  <path d="M125 315H372" class="arrow"/>
+  <text x="248" y="306" text-anchor="middle" class="message">「Copilot状態を確認」</text>
+  <path d="M372 338H905" class="arrow"/>
+  <text x="638" y="329" text-anchor="middle" class="message">Start → Ping → GetAuthStatus → ListModels</text>
+  <path d="M905 358H1127" class="arrow"/>
+  <text x="1016" y="350" text-anchor="middle" class="detail">stdio JSON-RPC</text>
+  <path d="M1127 374H1362" class="network"/>
+  <path d="M1362 379H372" class="return"/>
+  <text x="867" y="372" text-anchor="middle" class="detail">認証状態・利用可能model・上限 → UI（login終了だけでは成功扱いにしない）</text>
+
+  <rect x="32" y="402" width="1436" height="145" rx="10" class="phase-run" opacity="0.65"/>
+  <text x="47" y="426" class="phase-title">B. run準備</text>
+  <path d="M125 454H372" class="arrow"/>
+  <text x="248" y="445" text-anchor="middle" class="message">「定量化を開始」</text>
+  <path d="M372 482H650" class="arrow"/>
+  <text x="511" y="473" text-anchor="middle" class="message">immutable definition snapshot</text>
+  <text x="511" y="496" text-anchor="middle" class="detail">mapping・formula・request capacity・input identityを検証</text>
+  <path d="M650 520H372" class="storage"/>
+  <text x="511" y="512" text-anchor="middle" class="message">final / partial path予約・initial partial作成</text>
+
+  <rect x="32" y="565" width="1436" height="430" rx="10" class="phase-loop" opacity="0.38"/>
+  <text x="47" y="590" class="phase-title">C. Referenceと各student rowのAI operation</text>
+  <path d="M68 620h-17v338h17" class="loop"/>
+  <text x="76" y="644" class="loop-text">operationごとに新規session</text>
+  <text x="76" y="665" class="loop-text">row完了単位でcheckpoint</text>
+
+  <path d="M372 625H650" class="arrow"/>
+  <text x="511" y="616" text-anchor="middle" class="message">選択列だけread・Prompt payload生成</text>
+  <text x="511" y="639" text-anchor="middle" class="detail">Referenceは設問のみ／Normal・Specialはcurrent row／Similarityは回答＋Reference</text>
+  <path d="M650 666H372" class="return"/>
+  <text x="511" y="657" text-anchor="middle" class="detail">rendered prompt + expected IDs/ranges/sources</text>
+
+  <path d="M372 703H905" class="arrow"/>
+  <text x="638" y="694" text-anchor="middle" class="message">CreateSessionAsync(SessionConfig)</text>
+  <text x="638" y="717" text-anchor="middle" class="detail">model＋該当submit tool 1件／permission reject／MCP・memory・skills・file・git無効</text>
+  <path d="M905 742H1127" class="arrow"/>
+  <text x="1016" y="734" text-anchor="middle" class="message">session.create / send</text>
+  <path d="M1127 770H1362" class="network"/>
+  <text x="1245" y="762" text-anchor="middle" class="message">Prompt・tool schema・model</text>
+  <path d="M1362 808H1127" class="return"/>
+  <text x="1245" y="800" text-anchor="middle" class="message">tool call arguments</text>
+  <path d="M1127 835H905" class="return"/>
+  <text x="1016" y="827" text-anchor="middle" class="message">custom tool callback</text>
+  <path d="M905 866H372" class="return"/>
+  <text x="638" y="858" text-anchor="middle" class="message">Submit*Toolへclosed JSONを配送</text>
+  <path d="M372 895H650" class="arrow"/>
+  <text x="511" y="886" text-anchor="middle" class="message">strict parse＋ID/range/evidenceを再検証</text>
+  <path d="M650 922H372" class="return"/>
+  <text x="511" y="914" text-anchor="middle" class="detail">accepted result またはclosed status code</text>
+  <path d="M372 949H905" class="arrow"/>
+  <text x="638" y="941" text-anchor="middle" class="message">Abort（cancel時）/ Dispose / DeleteSession / Stop</text>
+  <path d="M372 977H650" class="storage"/>
+  <text x="511" y="969" text-anchor="middle" class="message">Reference完了後・completed row後にpartial更新</text>
+
+  <rect x="32" y="1015" width="1436" height="175" rx="10" class="phase-final" opacity="0.55"/>
+  <text x="47" y="1039" class="phase-title">D. final化</text>
+  <path d="M372 1070H650" class="storage"/>
+  <text x="511" y="1061" text-anchor="middle" class="message">入力copyへConfig / References / Results / Runを追加</text>
+  <path d="M650 1102H372" class="return"/>
+  <text x="511" y="1093" text-anchor="middle" class="detail">close → read-only reopen → schema/formula/cache/元parts/input identity検証</text>
+  <path d="M372 1133H650" class="storage"/>
+  <text x="511" y="1124" text-anchor="middle" class="message">no-overwrite atomic commit・成功後partial cleanup</text>
+  <path d="M372 1167H125" class="return"/>
+  <text x="248" y="1158" text-anchor="middle" class="message">結果・path・警告を表示</text>
+
+  <rect x="1037" y="925" width="420" height="58" rx="9" class="note"/>
+  <text x="1052" y="947" class="note-text">Reference / Similarity model: auto</text>
+  <text x="1052" y="967" class="note-text">Normal / Special model: UIで確認済みの選択model</text>
+
+  <text x="30" y="1243" class="footer">実装根拠: CopilotAuthenticationService.cs / BundledCopilotLoginService.cs / EphemeralEvaluationRunner.cs / AuxiliaryEvaluationRunner.cs / EvaluationSchemaFactory.cs</text>
+  <text x="30" y="1262" class="footer">SafeEvaluationPayloadBuilder.cs / DurableQuantificationOrchestrator.cs / DurableEvaluationScheduler.cs / CheckpointStore.cs / DurableRunFinalizer.cs</text>
+</svg>

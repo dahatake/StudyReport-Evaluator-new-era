@@ -1,0 +1,81 @@
+{
+  "schema": "urn:study-report-evaluator:report-definition:v1",
+  "report_type_id": "synthetic-test-only-en",
+  "revision": "1",
+  "target_language": "en",
+  "limits": {
+    "max_rubric_items_per_evaluator": 2,
+    "evaluator_id_max_scalars": 20,
+    "item_id_max_scalars": 24,
+    "reason_max_scalars": 240,
+    "evidence_max_scalars": 120,
+    "max_missing_flags_per_item": 0,
+    "reason_source_quote_rejection_threshold_scalars": 24
+  },
+  "reason_policy": {
+    "requirement": "optional",
+    "instruction": "Explain the rubric score concisely in the configured language."
+  },
+  "evidence_policy": {
+    "mode": "exact-quote-or-no-evidence",
+    "instruction": "Return only a short contiguous quote from the main answer."
+  },
+  "missing_flags": [],
+  "questions": [
+    {
+      "question_id": "q1",
+      "display_name": "Synthetic question",
+      "question_text": "This question exists only to validate the generic contract.",
+      "prompt_template": "{{question}}\n{{criteria}}\n{{answer}}",
+      "weight": 1,
+      "evaluator_ids": ["eval1"]
+    }
+  ],
+  "evaluators": [
+    {
+      "evaluator_id": "eval1",
+      "purpose": "Synthetic item-level evaluation",
+      "target_role": "main-answer",
+      "items": [
+        {
+          "item_id": "clarity",
+          "description": "Evaluate clarity against the configured anchors.",
+          "minimum_score": 0,
+          "maximum_score": 2,
+          "weight": 1,
+          "anchors": [
+            {
+              "score": 0,
+              "description": "The required explanation is absent."
+            },
+            {
+              "score": 2,
+              "description": "The required explanation is clear."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "rounding_digits": 0,
+  "aggregate_formula": {
+    "kind": "function",
+    "name": "ROUND",
+    "arguments": [
+      {
+        "kind": "function",
+        "name": "SUM",
+        "arguments": [
+          {
+            "kind": "setting-ref",
+            "setting_id": "adopted-score-range"
+          }
+        ]
+      },
+      {
+        "kind": "setting-ref",
+        "setting_id": "rounding-digits"
+      }
+    ]
+  }
+}

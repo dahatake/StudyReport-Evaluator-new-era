@@ -1,0 +1,420 @@
+<UserControl
+    x:Class="StudyReportEvaluator.App.Views.EvaluatorSettingsView"
+    x:DataType="viewModels:QuantificationDesignViewModel"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="using:Avalonia.Data.Converters"
+    xmlns:viewModels="using:StudyReportEvaluator.App.ViewModels"
+    FontSize="14"
+    Background="{DynamicResource AppCanvasBrush}"
+    Foreground="{DynamicResource AppTextBrush}"
+    KeyboardNavigation.TabNavigation="Continue"
+    AutomationProperties.AutomationId="EvaluatorSettingsView"
+    AutomationProperties.Name="通常評価の評価方法と評価項目の設定">
+  <UserControl.Styles>
+    <Style Selector="TextBox, ComboBox, Button, CheckBox, TabItem, ListBoxItem, ComboBoxItem">
+      <Setter Property="MinHeight" Value="44" />
+      <Setter Property="MinWidth" Value="44" />
+      <Setter Property="FontSize" Value="14" />
+      <Setter Property="ToolTip.ShowOnDisabled" Value="True" />
+    </Style>
+    <Style Selector="Button, TabItem">
+      <Setter Property="Padding" Value="8,4" />
+    </Style>
+    <Style Selector="ComboBox">
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="MaxDropDownHeight" Value="220" />
+      <Setter Property="ItemsPanel">
+        <ItemsPanelTemplate><VirtualizingStackPanel /></ItemsPanelTemplate>
+      </Setter>
+    </Style>
+    <Style Selector="TextBox:focus-visible, ComboBox:focus-visible, Button:focus-visible, CheckBox:focus-visible, TabItem:focus-visible, ListBoxItem:focus-visible">
+      <Setter Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
+      <Setter Property="BorderThickness" Value="3" />
+    </Style>
+    <Style Selector="ListBox.question-tabs">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="0" />
+    </Style>
+    <Style Selector="ListBox.question-tabs ListBoxItem">
+      <Setter Property="Padding" Value="12,4" />
+      <Setter Property="Margin" Value="0,0,4,0" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="ListBox.question-tabs ListBoxItem:selected /template/ ContentPresenter">
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
+      <Setter Property="BorderThickness" Value="0,0,0,3" />
+    </Style>
+    <Style Selector="Border.settings-pane">
+      <Setter Property="Padding" Value="8" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="TextBlock.field-label">
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TextBlock.validation">
+      <Setter Property="Foreground" Value="{DynamicResource TechnicalTextBrush}" />
+      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+      <Setter Property="MaxLines" Value="1" />
+    </Style>
+  </UserControl.Styles>
+
+  <!-- T17 supplies a finite, stretching content slot (about 950 x 450 DIP).
+       Only summaries are repeated in the dropdowns; editor controls are never repeated. -->
+  <Grid Margin="8" RowDefinitions="Auto,Auto,*" RowSpacing="8">
+    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+      <TextBlock Text="設問" Classes="field-label" />
+      <ListBox
+          x:Name="QuestionSelector"
+          Grid.Column="1"
+          Classes="question-tabs"
+          SelectionMode="Single"
+          Focusable="True"
+          MaxHeight="92"
+          ItemsSource="{Binding Questions}"
+          SelectedItem="{Binding SelectedQuestion, Mode=OneWay}"
+          SelectionChanged="HandleTargetSelectionChanged"
+          TabIndex="0"
+          AutomationProperties.AutomationId="EvaluatorSettingsQuestions"
+          AutomationProperties.Name="通常評価を編集する設問"
+          ToolTip.Tip="編集する設問のタブを選びます。設問本文と配点は変更しません。">
+        <ListBox.ItemsPanel>
+          <ItemsPanelTemplate><WrapPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+        </ListBox.ItemsPanel>
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="viewModels:QuestionDesignItemViewModel">
+            <TextBlock Text="{Binding DisplayName}" MaxWidth="240" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding DisplayName}" />
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </Grid>
+    <Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="12">
+      <Grid RowDefinitions="Auto,44" ColumnDefinitions="*,Auto" RowSpacing="4" ColumnSpacing="6">
+        <TextBlock Grid.ColumnSpan="2" Text="評価方法" Classes="field-label" />
+        <ComboBox
+            x:Name="EvaluatorSelector"
+            Grid.Row="1"
+            ItemsSource="{Binding SelectedQuestion.Evaluators}"
+            SelectedItem="{Binding SelectedQuestion.SelectedEvaluator, Mode=OneWay}"
+            SelectionChanged="HandleTargetSelectionChanged"
+            IsEnabled="{Binding SelectedQuestion, Converter={x:Static converters:ObjectConverters.IsNotNull}, FallbackValue=False}"
+            PlaceholderText="評価方法を選択"
+            TabIndex="1"
+            AutomationProperties.AutomationId="EvaluatorSettingsEvaluators"
+            AutomationProperties.Name="編集する通常評価の評価方法"
+            ToolTip.Tip="選択した設問の評価方法を選びます。無効な評価方法も編集できます。">
+          <ComboBox.ItemTemplate>
+            <DataTemplate x:DataType="viewModels:EvaluatorDesignItemViewModel">
+              <TextBlock Text="{Binding DisplayName}" MaxWidth="200" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding DisplayName}" />
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
+        <Button
+            x:Name="AddEvaluatorButton"
+            Grid.Row="1" Grid.Column="1"
+            Content="追加"
+            IsEnabled="{Binding SelectedQuestion, Converter={x:Static converters:ObjectConverters.IsNotNull}, FallbackValue=False}"
+            TabIndex="2"
+            AutomationProperties.AutomationId="{Binding SelectedQuestion.Id, StringFormat='DesignQuestion-{0}-AddEvaluator'}"
+            AutomationProperties.Name="通常評価の評価方法を追加"
+            ToolTip.Tip="追加する評価方法をKnowledgeまたはCustomから選びます。">
+          <Button.Flyout>
+            <Flyout>
+              <StackPanel Spacing="6">
+                <Button Content="Knowledgeを追加" Command="{Binding SelectedQuestion.AddKnowledgeEvaluatorCommand}" HorizontalAlignment="Stretch" TabIndex="0"
+                        AutomationProperties.AutomationId="{Binding SelectedQuestion.Id, StringFormat='DesignQuestion-{0}-AddKnowledgeEvaluator'}"
+                        AutomationProperties.Name="選択した設問へKnowledge評価方法を追加"
+                        ToolTip.Tip="説明・関係・適用をアプリの固定Promptで評価する方法を追加します。AIは実行しません。" />
+                <Button Content="Customを追加" Command="{Binding SelectedQuestion.AddCustomEvaluatorCommand}" HorizontalAlignment="Stretch" TabIndex="1"
+                        AutomationProperties.AutomationId="{Binding SelectedQuestion.Id, StringFormat='DesignQuestion-{0}-AddCustomEvaluator'}"
+                        AutomationProperties.Name="選択した設問へCustom評価方法を追加"
+                        ToolTip.Tip="Promptを全文編集できる評価方法を追加します。AIは実行しません。" />
+              </StackPanel>
+            </Flyout>
+          </Button.Flyout>
+        </Button>
+      </Grid>
+      <Grid Grid.Column="1" RowDefinitions="Auto,44" ColumnDefinitions="*,Auto" RowSpacing="4" ColumnSpacing="6">
+        <TextBlock Grid.ColumnSpan="2" Text="評価項目" Classes="field-label" />
+        <ComboBox
+            x:Name="CriterionSelector"
+            Grid.Row="1"
+            ItemsSource="{Binding SelectedQuestion.SelectedEvaluator.Criteria}"
+            SelectedItem="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion, Mode=OneWay}"
+            SelectionChanged="HandleTargetSelectionChanged"
+            IsEnabled="{Binding SelectedQuestion.SelectedEvaluator, Converter={x:Static converters:ObjectConverters.IsNotNull}, FallbackValue=False}"
+            PlaceholderText="評価項目を選択"
+            TabIndex="3"
+            AutomationProperties.AutomationId="EvaluatorSettingsCriteria"
+            AutomationProperties.Name="編集する通常評価の評価項目"
+            ToolTip.Tip="選択した評価方法の評価項目を選びます。無効な評価項目も編集できます。">
+          <ComboBox.ItemTemplate>
+            <DataTemplate x:DataType="viewModels:CriterionDesignItemViewModel">
+              <TextBlock Text="{Binding DisplayName}" MaxWidth="200" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding DisplayName}" />
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
+        <Button
+            x:Name="AddCriterionButton"
+            Grid.Row="1" Grid.Column="1"
+            Content="追加"
+            Command="{Binding SelectedQuestion.SelectedEvaluator.AddCriterionCommand}"
+            IsEnabled="{Binding SelectedQuestion.SelectedEvaluator, Converter={x:Static converters:ObjectConverters.IsNotNull}, FallbackValue=False}"
+            TabIndex="4"
+            AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedEvaluator.Id, StringFormat='DesignEvaluator-{0}-AddCriterion'}"
+            AutomationProperties.Name="選択した評価方法へ評価項目を追加"
+            ToolTip.Tip="この評価方法に新しい評価項目を追加します。既存の項目は変更しません。" />
+      </Grid>
+    </Grid>
+
+    <Grid Grid.Row="2">
+      <TextBlock
+          x:Name="NoQuestionMessage"
+          Text="設問を選択してください。設問がない場合は、設問の設定で追加してください。"
+          IsVisible="{Binding SelectedQuestion, Converter={x:Static converters:ObjectConverters.IsNull}, FallbackValue=True}"
+          HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="440" TextWrapping="Wrap"
+          AutomationProperties.AutomationId="EvaluatorSettingsNoQuestion"
+          AutomationProperties.Name="編集する設問が選択されていません" />
+      <TabControl
+          x:Name="EditorTabs"
+          IsVisible="{Binding SelectedQuestion, Converter={x:Static converters:ObjectConverters.IsNotNull}, FallbackValue=False}"
+          HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Padding="0"
+          AutomationProperties.AutomationId="EvaluatorSettingsTabs"
+          AutomationProperties.Name="通常評価の編集内容切替"
+          ToolTip.Tip="同じ評価方法の基本設定またはPromptを表示します。業務ステップは移動しません。">
+        <TabItem Header="基本" TabIndex="5"
+                 AutomationProperties.AutomationId="EvaluatorSettingsBasicTab"
+                 AutomationProperties.Name="通常評価の基本設定"
+                 ToolTip.Tip="評価方法と評価項目の名前、重み、点数範囲を編集します。">
+          <Grid Margin="0,6,0,0" ColumnDefinitions="*,*" ColumnSpacing="12">
+            <TextBlock x:Name="NoEvaluatorMessage" Text="評価方法を選択するか、上の「追加」で作成してください。"
+                       IsVisible="{Binding SelectedQuestion.SelectedEvaluator, Converter={x:Static converters:ObjectConverters.IsNull}, FallbackValue=True}"
+                       TextWrapping="Wrap" VerticalAlignment="Center" Margin="16"
+                       AutomationProperties.AutomationId="EvaluatorSettingsNoEvaluator"
+                       AutomationProperties.Name="編集する評価方法が選択されていません" />
+            <Border Classes="settings-pane"
+                    IsVisible="{Binding SelectedQuestion.SelectedEvaluator, Converter={x:Static converters:ObjectConverters.IsNotNull}, FallbackValue=False}"
+                    AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedEvaluator.CardAutomationId}"
+                    AutomationProperties.Name="{Binding SelectedQuestion.SelectedEvaluator.DisplayName}">
+              <Grid RowDefinitions="44,44,44,44,*,Auto" RowSpacing="4">
+                <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="4">
+                  <CheckBox Content="有効" IsChecked="{Binding SelectedQuestion.SelectedEvaluator.Enabled, Mode=TwoWay}" TabIndex="10"
+                            AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedEvaluator.Id, StringFormat='DesignEvaluator-{0}-Enabled'}"
+                            AutomationProperties.Name="評価方法を有効にする"
+                            ToolTip.Tip="通常評価に含めるか設定します。無効な評価方法の重みは割合の分母に含めません。" />
+                  <Button Grid.Column="1" Content="複製" Command="{Binding SelectedQuestion.SelectedEvaluator.DuplicateCommand}" TabIndex="11"
+                          AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedEvaluator.Id, StringFormat='DesignEvaluator-{0}-Duplicate'}"
+                          AutomationProperties.Name="選択した評価方法を複製"
+                          ToolTip.Tip="評価方法と配下の評価項目を新しい識別子で直後へ複製します。" />
+                  <Button Grid.Column="2" Content="上へ" Command="{Binding SelectedQuestion.SelectedEvaluator.MoveUpCommand}" TabIndex="12"
+                          AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedEvaluator.Id, StringFormat='DesignEvaluator-{0}-MoveUp'}"
+                          AutomationProperties.Name="選択した評価方法を一つ上へ移動"
+                          ToolTip.Tip="同じ設問の中で評価方法を一つ前へ移動します。" />
+                  <Button Grid.Column="3" Content="下へ" Command="{Binding SelectedQuestion.SelectedEvaluator.MoveDownCommand}" TabIndex="13"
+                          AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedEvaluator.Id, StringFormat='DesignEvaluator-{0}-MoveDown'}"
+                          AutomationProperties.Name="選択した評価方法を一つ下へ移動"
+                          ToolTip.Tip="同じ設問の中で評価方法を一つ後ろへ移動します。" />
+                  <Button Grid.Column="4" Content="削除" Command="{Binding SelectedQuestion.SelectedEvaluator.DeleteCommand}" TabIndex="14"
+                          AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedEvaluator.Id, StringFormat='DesignEvaluator-{0}-Delete'}"
+                          AutomationProperties.Name="選択した評価方法を削除"
+                          ToolTip.Tip="この評価方法と配下の評価項目をdraftから削除します。" />
+                </Grid>
+                <Grid Grid.Row="1" ColumnDefinitions="76,*" ColumnSpacing="6">
+                  <TextBlock Text="評価方法名" Classes="field-label" />
+                  <TextBox Grid.Column="1" Text="{Binding SelectedQuestion.SelectedEvaluator.DisplayName, Mode=TwoWay}" TabIndex="15"
+                           AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedEvaluator.Id, StringFormat='DesignEvaluator-{0}-Name'}"
+                           AutomationProperties.Name="評価方法の表示名"
+                           ToolTip.Tip="画面と結果でこの評価方法を識別する名前を入力します。" />
+                </Grid>
+                <Grid Grid.Row="2" ColumnDefinitions="42,*,42,*" ColumnSpacing="6">
+                  <TextBlock Text="種類" Classes="field-label" />
+                  <ComboBox Grid.Column="1" ItemsSource="{Binding SelectedQuestion.SelectedEvaluator.AvailableTypes}"
+                            SelectedItem="{Binding SelectedQuestion.SelectedEvaluator.SelectedTypeChoice, Mode=TwoWay}" TabIndex="16"
+                            AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedEvaluator.TypeAutomationId}"
+                            AutomationProperties.Name="評価方法の種類"
+                            ToolTip.Tip="Knowledgeは固定Prompt、Customは編集可能なPromptです。Knowledgeへの変更はCustom本文を消去します。">
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate x:DataType="viewModels:EvaluatorTypeChoice"><TextBlock Text="{Binding DisplayName}" /></DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                  <TextBlock Grid.Column="2" Text="重み" Classes="field-label" />
+                  <TextBox Grid.Column="3" Text="{Binding SelectedQuestion.SelectedEvaluator.Weight, Mode=TwoWay}" TabIndex="17"
+                           AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedEvaluator.Id, StringFormat='DesignEvaluator-{0}-Weight'}"
+                           AutomationProperties.Name="評価方法の重み"
+                           ToolTip.Tip="同じ設問の有効な評価方法間の相対係数です。0より大きい値を入力します。" />
+                </Grid>
+                <Grid Grid.Row="3" ColumnDefinitions="42,*,42,*" ColumnSpacing="6">
+                  <TextBlock Text="最小" Classes="field-label" />
+                  <TextBox Grid.Column="1" Text="{Binding SelectedQuestion.SelectedEvaluator.Minimum, Mode=TwoWay}" TabIndex="18"
+                           AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedEvaluator.Id, StringFormat='DesignEvaluator-{0}-Minimum'}"
+                           AutomationProperties.Name="評価方法の点数範囲の最小値"
+                           ToolTip.Tip="評価方法の点数範囲の最小値です。最大値より小さくします。" />
+                  <TextBlock Grid.Column="2" Text="最大" Classes="field-label" />
+                  <TextBox Grid.Column="3" Text="{Binding SelectedQuestion.SelectedEvaluator.Maximum, Mode=TwoWay}" TabIndex="19"
+                           AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedEvaluator.Id, StringFormat='DesignEvaluator-{0}-Maximum'}"
+                           AutomationProperties.Name="評価方法の点数範囲の最大値"
+                           ToolTip.Tip="評価方法の点数範囲の最大値です。最小値より大きくします。" />
+                </Grid>
+                <TextBlock Grid.Row="4" Text="Promptは「Prompt」タブで確認・編集できます。ここでの操作ではAIを実行しません。"
+                           VerticalAlignment="Center" TextWrapping="Wrap" Foreground="{DynamicResource AppMutedTextBrush}" />
+                <StackPanel Grid.Row="5" Spacing="2">
+                  <TextBlock Text="{Binding SelectedQuestion.SelectedEvaluator.EffectiveWeightText, StringFormat='設問内の割合: {0}'}" />
+                  <TextBlock Text="{Binding SelectedQuestion.SelectedEvaluator.ValidationText}" Classes="validation"
+                             IsVisible="{Binding SelectedQuestion.SelectedEvaluator.HasErrors, FallbackValue=False}"
+                             AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedEvaluator.Id, StringFormat='DesignEvaluator-{0}-Validation'}"
+                             AutomationProperties.Name="{Binding SelectedQuestion.SelectedEvaluator.ValidationText}"
+                             ToolTip.Tip="{Binding SelectedQuestion.SelectedEvaluator.ValidationText}" />
+                </StackPanel>
+              </Grid>
+            </Border>
+
+            <TextBlock x:Name="NoCriterionMessage" Grid.Column="1" Text="評価方法と評価項目を選択してください。項目がない場合は上の「追加」で作成できます。"
+                       IsVisible="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion, Converter={x:Static converters:ObjectConverters.IsNull}, FallbackValue=True}"
+                       TextWrapping="Wrap" VerticalAlignment="Center" Margin="16"
+                       AutomationProperties.AutomationId="EvaluatorSettingsNoCriterion"
+                       AutomationProperties.Name="編集する評価項目が選択されていません" />
+            <Border Grid.Column="1" Classes="settings-pane"
+                    IsVisible="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion, Converter={x:Static converters:ObjectConverters.IsNotNull}, FallbackValue=False}"
+                    AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.CardAutomationId}"
+                    AutomationProperties.Name="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.DisplayName}">
+              <Grid RowDefinitions="44,44,*,44,44,Auto" RowSpacing="4">
+                <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="4">
+                  <CheckBox Content="有効" IsChecked="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.Enabled, Mode=TwoWay}" TabIndex="20"
+                            AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.Id, StringFormat='DesignCriterion-{0}-Enabled'}"
+                            AutomationProperties.Name="評価項目を有効にする"
+                            ToolTip.Tip="この項目を評価に含めるか設定します。無効な項目は加重平均の分母に含めません。" />
+                  <Button Grid.Column="1" Content="複製" Command="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.DuplicateCommand}" TabIndex="21"
+                          AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.Id, StringFormat='DesignCriterion-{0}-Duplicate'}"
+                          AutomationProperties.Name="選択した評価項目を複製"
+                          ToolTip.Tip="この項目を新しい識別子で直後へ複製します。" />
+                  <Button Grid.Column="2" Content="上へ" Command="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.MoveUpCommand}" TabIndex="22"
+                          AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.Id, StringFormat='DesignCriterion-{0}-MoveUp'}"
+                          AutomationProperties.Name="選択した評価項目を一つ上へ移動"
+                          ToolTip.Tip="同じ評価方法の中で項目を一つ前へ移動します。" />
+                  <Button Grid.Column="3" Content="下へ" Command="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.MoveDownCommand}" TabIndex="23"
+                          AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.Id, StringFormat='DesignCriterion-{0}-MoveDown'}"
+                          AutomationProperties.Name="選択した評価項目を一つ下へ移動"
+                          ToolTip.Tip="同じ評価方法の中で項目を一つ後ろへ移動します。" />
+                  <Button Grid.Column="4" Content="削除" Command="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.DeleteCommand}" TabIndex="24"
+                          AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.Id, StringFormat='DesignCriterion-{0}-Delete'}"
+                          AutomationProperties.Name="選択した評価項目を削除"
+                          ToolTip.Tip="この項目をdraftから削除します。他の項目は変更しません。" />
+                </Grid>
+                <Grid Grid.Row="1" ColumnDefinitions="60,*" ColumnSpacing="6">
+                  <TextBlock Text="項目名" Classes="field-label" />
+                  <TextBox Grid.Column="1" Text="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.DisplayName, Mode=TwoWay}" TabIndex="25"
+                           AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.NameAutomationId}"
+                           AutomationProperties.Name="評価項目の名前または知識ポイント"
+                           ToolTip.Tip="評価する観点や知識ポイントの名前を入力します。" />
+                </Grid>
+                <Grid Grid.Row="2" ColumnDefinitions="60,*" ColumnSpacing="6" MinHeight="44">
+                  <TextBlock Text="説明" Classes="field-label" />
+                  <TextBox Grid.Column="1" Text="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.Description, Mode=TwoWay}"
+                           AcceptsReturn="True" TextWrapping="Wrap" VerticalAlignment="Stretch"
+                           ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto" TabIndex="26"
+                           AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.Id, StringFormat='DesignCriterion-{0}-Description'}"
+                           AutomationProperties.Name="評価項目の説明"
+                           ToolTip.Tip="この観点で何を確認するかを全文入力します。長い説明はこの欄の中でスクロールできます。" />
+                </Grid>
+                <Grid Grid.Row="3" ColumnDefinitions="42,*,Auto" ColumnSpacing="6">
+                  <TextBlock Text="重み" Classes="field-label" />
+                  <TextBox Grid.Column="1" Text="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.Weight, Mode=TwoWay}" TabIndex="27"
+                           AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.Id, StringFormat='DesignCriterion-{0}-Weight'}"
+                           AutomationProperties.Name="評価項目の重み"
+                           ToolTip.Tip="同じ評価方法の有効な項目間の相対係数です。0より大きい値を入力します。" />
+                  <CheckBox Grid.Column="2" Content="個別の範囲" IsChecked="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.HasCustomRange, Mode=TwoWay}" TabIndex="28"
+                            AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.RangeAutomationId}"
+                            AutomationProperties.Name="評価項目の個別点数範囲を使う"
+                            ToolTip.Tip="有効にするとこの項目だけ別の点数範囲を使います。無効にすると評価方法の範囲を引き継ぎます。" />
+                </Grid>
+                <Grid Grid.Row="4" ColumnDefinitions="42,*,42,*" ColumnSpacing="6">
+                  <TextBlock Text="最小" Classes="field-label" />
+                  <TextBox Grid.Column="1" Text="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.Minimum, Mode=TwoWay}"
+                           IsEnabled="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.HasCustomRange, FallbackValue=False}" TabIndex="29"
+                           AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.Id, StringFormat='DesignCriterion-{0}-Minimum'}"
+                           AutomationProperties.Name="評価項目の個別点数範囲の最小値"
+                           ToolTip.Tip="個別範囲の最小値です。個別範囲が無効な場合は評価方法の最小値を表示します。" />
+                  <TextBlock Grid.Column="2" Text="最大" Classes="field-label" />
+                  <TextBox Grid.Column="3" Text="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.Maximum, Mode=TwoWay}"
+                           IsEnabled="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.HasCustomRange, FallbackValue=False}" TabIndex="30"
+                           AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.Id, StringFormat='DesignCriterion-{0}-Maximum'}"
+                           AutomationProperties.Name="評価項目の個別点数範囲の最大値"
+                           ToolTip.Tip="個別範囲の最大値です。個別範囲が無効な場合は評価方法の最大値を表示します。" />
+                </Grid>
+                <StackPanel Grid.Row="5" Spacing="2">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                    <TextBlock Text="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.EffectiveRangeText}" TextTrimming="CharacterEllipsis"
+                               ToolTip.Tip="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.EffectiveRangeText}" />
+                    <TextBlock Grid.Column="1" Text="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.EffectiveWeightText, StringFormat='割合: {0}'}" />
+                  </Grid>
+                  <TextBlock Text="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.ValidationText}" Classes="validation"
+                             IsVisible="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.HasErrors, FallbackValue=False}"
+                             AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.Id, StringFormat='DesignCriterion-{0}-Validation'}"
+                             AutomationProperties.Name="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.ValidationText}"
+                             ToolTip.Tip="{Binding SelectedQuestion.SelectedEvaluator.SelectedCriterion.ValidationText}" />
+                </StackPanel>
+              </Grid>
+            </Border>
+          </Grid>
+        </TabItem>
+        <TabItem Header="Prompt" TabIndex="6"
+                 IsEnabled="{Binding SelectedQuestion.SelectedEvaluator, Converter={x:Static converters:ObjectConverters.IsNotNull}, FallbackValue=False}"
+                 AutomationProperties.AutomationId="EvaluatorSettingsPromptTab"
+                 AutomationProperties.Name="通常評価のPrompt設定"
+                 ToolTip.Tip="Knowledgeの固定Promptを確認するか、Customの本文を編集します。AIは実行しません。">
+          <Grid Margin="0,6,0,0">
+            <TextBlock Text="評価方法を選択するか、上の「追加」で作成してください。"
+                       IsVisible="{Binding SelectedQuestion.SelectedEvaluator, Converter={x:Static converters:ObjectConverters.IsNull}, FallbackValue=True}"
+                       HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap"
+                       AutomationProperties.AutomationId="EvaluatorSettingsPromptNoEvaluator"
+                       AutomationProperties.Name="Promptを表示する評価方法が選択されていません" />
+            <Border Classes="settings-pane" IsVisible="{Binding SelectedQuestion.SelectedEvaluator.IsKnowledge, FallbackValue=False}">
+              <Grid RowDefinitions="Auto,Auto,*" RowSpacing="6">
+                <TextBlock Text="Knowledge Prompt（読取専用）" Classes="field-label" />
+                <TextBlock Grid.Row="1" Text="{Binding SelectedQuestion.SelectedEvaluator.PromptGuidance}" TextWrapping="Wrap" />
+                <TextBox Grid.Row="2" Text="{Binding SelectedQuestion.SelectedEvaluator.PromptPreview, Mode=OneWay}"
+                         IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" VerticalAlignment="Stretch"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto" TabIndex="40"
+                         AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedEvaluator.KnowledgePromptPreviewAutomationId}"
+                         AutomationProperties.Name="Knowledge評価の固定Prompt全文の読取専用プレビュー"
+                         ToolTip.Tip="アプリが管理するKnowledgeのPrompt全文です。編集できません。プレビュー表示でAIは実行しません。" />
+              </Grid>
+            </Border>
+            <Border Classes="settings-pane" IsVisible="{Binding SelectedQuestion.SelectedEvaluator.IsCustom, FallbackValue=False}">
+              <Grid RowDefinitions="Auto,*,Auto,Auto" ColumnDefinitions="*,*" RowSpacing="6" ColumnSpacing="12">
+                <TextBlock Text="Custom Prompt（全文を編集）" Classes="field-label" />
+                <TextBlock Grid.Column="1" Text="プレビュー（読取専用・AI未実行）" Classes="field-label" />
+                <TextBox Grid.Row="1" Text="{Binding SelectedQuestion.SelectedEvaluator.CustomPromptTemplate, Mode=TwoWay}"
+                         AcceptsReturn="True" TextWrapping="Wrap" VerticalAlignment="Stretch"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto" TabIndex="40"
+                         AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedEvaluator.PromptAutomationId}"
+                         AutomationProperties.Name="Custom評価のPrompt全文"
+                         ToolTip.Tip="Promptを全文編集します。{回答}と{評価項目}が必須です。長い本文はこの欄の中でスクロールできます。" />
+                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding SelectedQuestion.SelectedEvaluator.PromptPreview, Mode=OneWay}"
+                         IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" VerticalAlignment="Stretch"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto" TabIndex="41"
+                         AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedEvaluator.CustomPromptPreviewAutomationId}"
+                         AutomationProperties.Name="Custom評価の安全な仮値による読取専用プレビュー"
+                         ToolTip.Tip="必須placeholderを安全な仮値で置換したプレビューです。実データやAIは使用しません。" />
+                <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Text="{Binding SelectedQuestion.SelectedEvaluator.PromptGuidance}" TextWrapping="Wrap" />
+                <TextBlock Grid.Row="3" Grid.ColumnSpan="2" Text="{Binding SelectedQuestion.SelectedEvaluator.ValidationText}" Classes="validation"
+                           IsVisible="{Binding SelectedQuestion.SelectedEvaluator.HasErrors, FallbackValue=False}"
+                           AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedEvaluator.Id, StringFormat='DesignEvaluator-{0}-PromptValidation'}"
+                           AutomationProperties.Name="{Binding SelectedQuestion.SelectedEvaluator.ValidationText}"
+                           ToolTip.Tip="{Binding SelectedQuestion.SelectedEvaluator.ValidationText}" />
+              </Grid>
+            </Border>
+          </Grid>
+        </TabItem>
+      </TabControl>
+    </Grid>
+  </Grid>
+</UserControl>

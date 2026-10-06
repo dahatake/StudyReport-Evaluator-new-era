@@ -1,0 +1,268 @@
+name: Release candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing stable annotated release tag (for example, v0.8.1)
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.tag }}
+  cancel-in-progress: false
+
+env:
+  CI: "true"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1"
+  STUDY_REPORT_EVALUATOR_COPILOT_LIVE_SMOKE: "0"
+  STUDY_REPORT_EVALUATOR_EXTERNAL_RECALC_SMOKE: "0"
+  STUDY_REPORT_EVALUATOR_REALDATA_SYSTEM_SMOKE: "0"
+
+jobs:
+  candidate:
+    name: Build and validate the draft Windows release candidate
+    runs-on: windows-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.tag }}
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        env:
+          # Release evidence binds the exact SDK; isolate it from newer preinstalled 10.0.4xx patches
+          # that global.json's latestPatch would otherwise select on the hosted runner.
+          DOTNET_INSTALL_DIR: ${{ runner.temp }}\dotnet-sdk-10.0.400
+        with:
+          dotnet-version: 10.0.400
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
+
+      - name: Verify the exact release .NET SDK
+        shell: pwsh
+        run: |
+          $sdkVersion = ((& dotnet --version) | Out-String).Trim()
+          if ($LASTEXITCODE -ne 0 -or $sdkVersion -cne '10.0.400') {
+              throw "Release builds require .NET SDK 10.0.400 exactly; resolved '$sdkVersion'."
+          }
+
+      - name: Verify release identity and privacy boundary
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          if ($PSVersionTable.PSEdition -cne 'Core' -or
+              $PSVersionTable.PSVersion -lt [System.Version]'7.5') {
+              throw 'PowerShell Core 7.5 or later is required.'
+          }
+          if ($env:RELEASE_TAG -cnotmatch '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$') {
+              throw "Only stable release tags are supported: $env:RELEASE_TAG"
+          }
+
+            $tagCommit = ((& git rev-list -n 1 $env:RELEASE_TAG) | Out-String).Trim()
+            $tagExitCode = $LASTEXITCODE
+            $headCommit = ((& git rev-parse HEAD) | Out-String).Trim()
+            $headExitCode = $LASTEXITCODE
+            if ($tagExitCode -ne 0 -or $headExitCode -ne 0 -or $tagCommit -cne $headCommit) {
+              throw 'The requested tag must exist and point to the checked-out commit.'
+          }
+            $tagType = ((& git cat-file -t $env:RELEASE_TAG) | Out-String).Trim()
+            if ($LASTEXITCODE -ne 0 -or $tagType -cne 'tag') {
+              throw 'The release tag must be annotated.'
+          }
+            $sourceStatus = @(& git status --porcelain=v1 --untracked-files=all)
+            if ($LASTEXITCODE -ne 0 -or $sourceStatus.Count -ne 0) {
+              throw 'The release checkout must be clean.'
+          }
+            $trackedSamples = @(& git ls-files -- sample)
+            if ($LASTEXITCODE -ne 0 -or $trackedSamples.Count -ne 0) {
+              throw 'The private local sample directory must remain untracked.'
+          }
+
+          pwsh.exe -NoLogo -NoProfile -File .\dev\version.ps1 verify -Tag $env:RELEASE_TAG -RequireClean
+          if ($LASTEXITCODE -ne 0) {
+              throw 'Release version verification failed.'
+          }
+
+          $version = $env:RELEASE_TAG.Substring(1)
+          $changelog = Get-Content -LiteralPath '.\CHANGELOG.md' -Raw -Encoding utf8
+          if (-not [regex]::IsMatch(
+                  $changelog,
+                  "(?m)^## \[$([regex]::Escape($version))\] - \d{4}-\d{2}-\d{2}\s*$")) {
+              throw "CHANGELOG.md does not contain a dated $version section."
+          }
+
+      - name: Restore locked dependencies
+        shell: pwsh
+        run: dotnet restore .\StudyReportEvaluator.slnx --locked-mode
+
+      - name: Build Release
+        shell: pwsh
+        run: dotnet build .\StudyReportEvaluator.slnx --configuration Release --no-restore
+
+      - name: Run deterministic release tests
+        id: release-tests
+        shell: pwsh
+        run: >-
+          dotnet test .\StudyReportEvaluator.slnx
+          --configuration Release
+          --no-build
+          --no-restore
+          --filter "FullyQualifiedName!~StudyReportEvaluator.App.Tests.E2E.SampleWorkbookStructuralTests&FullyQualifiedName!~StudyReportEvaluator.App.Tests.Packaging.WindowsPublishPackageTests&FullyQualifiedName!~StudyReportEvaluator.App.Tests.Packaging.WindowsSingleFilePackageTests"
+          --results-directory .\TestResults\release
+          --logger "trx"
+          --logger "console;verbosity=minimal"
+
+      - name: Build and validate Windows ZIP regression
+        shell: pwsh
+        run: >-
+          .\scripts\test-windows-zip.ps1
+          -ResultsDirectory .\TestResults\release\windows-zip
+
+      - name: Verify WindowsDesktop runtime for single-file UIA observer
+        shell: pwsh
+        run: |
+          $runtimeMatches = @(
+            dotnet --list-runtimes |
+              Where-Object { $_ -match '^Microsoft\.WindowsDesktop\.App 10\.0\.[0-9]+\s' })
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Failed to query installed .NET runtimes.'
+          }
+          if ($runtimeMatches.Count -eq 0) {
+            throw 'WindowsDesktop runtime 10.0.x is required for single-file UIA observer validation.'
+          }
+
+      - name: Build and validate Windows single-file candidate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & .\scripts\publish-windows.ps1 -SingleFile
+          if (-not $?) {
+            throw 'Single-file publish failed.'
+          }
+
+          & .\scripts\package-windows-singlefile.ps1
+          if (-not $?) {
+            throw 'Single-file packaging failed.'
+          }
+
+          & .\scripts\test-windows-singlefile.ps1 -ResultsDirectory .\TestResults\release\windows-singlefile
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Single-file required validation failed.'
+          }
+
+      - name: Verify published binary version
+        shell: pwsh
+        run: >-
+          pwsh.exe -NoLogo -NoProfile -File .\dev\version.ps1 verify
+          -PublishedDirectory .\artifacts\package\publish\win-x64
+
+      - name: Build and validate candidate release controls
+        shell: pwsh
+        run: >-
+          .\scripts\build-platform-release-matrix.ps1
+          -Mode Candidate
+          -ExpectedRepository $env:GITHUB_REPOSITORY
+          -CandidateRunId $env:GITHUB_RUN_ID
+          -SingleFileDirectory .\artifacts\package
+          -ZipDirectory .\artifacts\package
+          -OutputDirectory .\artifacts\package\matrix
+
+      - name: Upload release control evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-candidate-${{ inputs.tag }}-${{ github.run_id }}
+          path: |
+            artifacts/package/matrix/release-candidate-record.json
+            artifacts/package/matrix/StudyReportEvaluator-win-x64.exe.evidence.json
+            artifacts/package/matrix/StudyReportEvaluator-win-x64.evidence.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload public candidate assets
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-assets-${{ inputs.tag }}-${{ github.run_id }}
+          path: |
+            artifacts/package/matrix/StudyReportEvaluator-win-x64.exe
+            artifacts/package/matrix/StudyReportEvaluator-win-x64.exe.sha256
+            artifacts/package/matrix/StudyReportEvaluator-win-x64.zip
+            artifacts/package/matrix/StudyReportEvaluator-win-x64.zip.sha256
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+
+      - name: Upload release test results
+        if: ${{ always() && steps.release-tests.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-test-results-${{ github.run_id }}
+          path: TestResults/release/**/*.trx
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Create the draft GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          gh release view $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY 2>$null | Out-Null
+          if ($LASTEXITCODE -eq 0) {
+              throw "Release $env:RELEASE_TAG already exists; this workflow never replaces a release."
+          }
+
+          $version = $env:RELEASE_TAG.Substring(1)
+          $changelog = Get-Content -LiteralPath '.\CHANGELOG.md' -Raw -Encoding utf8
+          $escapedVersion = [regex]::Escape($version)
+          $match = [regex]::Match(
+              $changelog,
+              "(?ms)^## \[$escapedVersion\] - (?<date>\d{4}-\d{2}-\d{2})\r?\n(?<body>.*?)(?=^## \[|\z)")
+          if (-not $match.Success) {
+              throw "CHANGELOG.md does not contain a dated $version section."
+          }
+
+          $notesPath = Join-Path $env:RUNNER_TEMP "release-notes-$version.md"
+          $notes = "StudyReport Evaluator $version`n`n" + $match.Groups['body'].Value.Trim() + "`n"
+          [System.IO.File]::WriteAllText($notesPath, $notes, [System.Text.UTF8Encoding]::new($false))
+
+          & gh @(
+              'release', 'create', $env:RELEASE_TAG,
+              '.\artifacts\package\matrix\StudyReportEvaluator-win-x64.exe',
+              '.\artifacts\package\matrix\StudyReportEvaluator-win-x64.exe.sha256',
+              '.\artifacts\package\matrix\StudyReportEvaluator-win-x64.zip',
+              '.\artifacts\package\matrix\StudyReportEvaluator-win-x64.zip.sha256',
+              '--repo', $env:GITHUB_REPOSITORY,
+              '--draft',
+              '--verify-tag',
+              '--title', "StudyReport Evaluator $version",
+              '--notes-file', $notesPath)
+          if ($LASTEXITCODE -ne 0) {
+              throw 'Draft GitHub Release creation failed.'
+          }
+
+          $draft = gh release view $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --json isDraft,assets |
+              ConvertFrom-Json
+          $assetNames = @($draft.assets | ForEach-Object { [string]$_.name } | Sort-Object)
+          $expectedAssets = @(
+              'StudyReportEvaluator-win-x64.exe',
+              'StudyReportEvaluator-win-x64.exe.sha256',
+              'StudyReportEvaluator-win-x64.zip',
+              'StudyReportEvaluator-win-x64.zip.sha256')
+          if (-not $draft.isDraft -or
+              $assetNames.Count -ne $expectedAssets.Count -or
+              @($expectedAssets | Where-Object { $_ -cnotin $assetNames }).Count -ne 0) {
+              throw 'The candidate release must remain a draft that carries exactly EXE/ZIP public assets and sidecars.'
+          }
+
+          Write-Output "Draft $env:RELEASE_TAG created with exact EXE/ZIP assets."
+          Write-Output 'PASS_CANDIDATE is non-publishable. Clean-host verification and the protected publish workflow are still required before publication.'

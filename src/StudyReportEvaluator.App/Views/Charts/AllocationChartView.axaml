@@ -1,0 +1,88 @@
+<UserControl
+    x:Class="StudyReportEvaluator.App.Views.Charts.AllocationChartView"
+    x:DataType="viz:AllocationChartViewModel"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:viz="using:StudyReportEvaluator.App.Visualization"
+    xmlns:charts="using:StudyReportEvaluator.App.Views.Charts"
+    FontSize="14"
+    Foreground="{DynamicResource AppTextBrush}"
+    AutomationProperties.AutomationId="DesignAllocationChart"
+    AutomationProperties.Name="配点構成（基礎配点・固有配点・各設問配点の積み上げ棒と配点表）">
+  <UserControl.Styles>
+    <Style Selector="TextBlock.label">
+      <Setter Property="Foreground" Value="{DynamicResource AppMutedTextBrush}" />
+    </Style>
+    <Style Selector="charts|AllocationSegmentControl">
+      <Setter Property="Fill" Value="{DynamicResource AppAccentBrush}" />
+      <Setter Property="AlternateFill" Value="{DynamicResource AppAccentSoftBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource AppTextBrush}" />
+      <Setter Property="Separator" Value="{DynamicResource AppSurfaceBrush}" />
+      <Setter Property="Outline" Value="{DynamicResource AppBorderBrush}" />
+      <Setter Property="FocusBrush" Value="{DynamicResource FocusRingBrush}" />
+    </Style>
+    <Style Selector="charts|AllocationReferenceLine">
+      <Setter Property="Stroke" Value="{DynamicResource AppTextBrush}" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="Auto,Auto,Auto,*" RowSpacing="6" Margin="8">
+    <!-- FR-071: the bar exists whenever a definition exists; only an incomputable total shows a reason. -->
+    <StackPanel Grid.RowSpan="4" Spacing="4" IsVisible="{Binding IsEmpty}">
+      <TextBlock Text="{Binding EmptyTitle}" FontWeight="SemiBold" TextWrapping="Wrap"
+                 AutomationProperties.AutomationId="DesignAllocationChartEmpty" />
+      <TextBlock Text="{Binding EmptyReason}" TextWrapping="Wrap"
+                 AutomationProperties.AutomationId="DesignAllocationChartEmptyReason" />
+    </StackPanel>
+
+    <WrapPanel IsVisible="{Binding CanDraw}" ItemSpacing="12" LineSpacing="2">
+      <TextBlock Text="{Binding TotalText}" FontWeight="SemiBold"
+                 AutomationProperties.AutomationId="DesignAllocationTotal" />
+      <TextBlock Text="{Binding DifferenceText}" FontWeight="Bold"
+                 AutomationProperties.AutomationId="DesignAllocationDifference"
+                 AutomationProperties.Name="{Binding DifferenceText}" />
+      <TextBlock Text="{Binding StateText}" TextWrapping="Wrap"
+                 AutomationProperties.AutomationId="DesignAllocationState" />
+    </WrapPanel>
+
+    <charts:AllocationBarPanel x:Name="AllocationBar" Grid.Row="1" IsVisible="{Binding CanDraw}"
+                               Segments="{Binding Segments}" ReferenceFraction="{Binding ReferenceFraction}"
+                               ReferenceName="{Binding ReferenceLineName}"
+                               KeyboardNavigation.TabNavigation="Once"
+                               AutomationProperties.AutomationId="DesignAllocationBar"
+                               AutomationProperties.Name="配点の積み上げ棒。左右の矢印キーで区分を移動し、Enter で設問を選ぶ。破線は合計 100 の基準線" />
+
+    <TextBlock Grid.Row="2" Text="{Binding SummaryText}" IsVisible="{Binding CanDraw}" TextWrapping="Wrap"
+               AutomationProperties.AutomationId="DesignAllocationSummaryText"
+               AutomationProperties.Name="{Binding SummaryText}"
+               AutomationProperties.LiveSetting="Polite" />
+
+    <!-- FR-070: the points table with the same values as the bar. -->
+    <Grid Grid.Row="3" RowDefinitions="Auto,*" IsVisible="{Binding CanDraw}">
+      <Grid ColumnDefinitions="14,32,*,Auto" ColumnSpacing="6" Margin="0,0,0,2">
+        <TextBlock Grid.Column="1" Text="区分" Classes="label" />
+        <TextBlock Grid.Column="2" Text="名称" Classes="label" />
+        <TextBlock Grid.Column="3" Text="配点" Classes="label" />
+      </Grid>
+      <ScrollViewer Grid.Row="1" Focusable="True" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto"
+                    AutomationProperties.AutomationId="DesignAllocationTableScroll"
+                    AutomationProperties.Name="配点表（区分・名称・配点）">
+        <ItemsControl ItemsSource="{Binding Segments}" AutomationProperties.AutomationId="DesignAllocationTable">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="viz:AllocationSegmentItem">
+              <Grid ColumnDefinitions="14,32,*,Auto" ColumnSpacing="6" MinHeight="28"
+                    AutomationProperties.AutomationId="{Binding TableAutomationId}"
+                    AutomationProperties.Name="{Binding AccessibleName}"
+                    ToolTip.Tip="{Binding AccessibleName}">
+                <TextBlock Text="{Binding Marker}" FontWeight="Bold" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="{Binding Code}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="2" Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="3" Text="{Binding PointsText}" FontWeight="SemiBold" VerticalAlignment="Center" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+    </Grid>
+  </Grid>
+</UserControl>

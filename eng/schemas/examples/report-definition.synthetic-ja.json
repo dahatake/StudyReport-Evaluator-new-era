@@ -1,0 +1,105 @@
+{
+  "schema": "urn:study-report-evaluator:report-definition:v1",
+  "report_type_id": "synthetic-test-only-ja",
+  "revision": "1",
+  "target_language": "ja-JP",
+  "limits": {
+    "max_rubric_items_per_evaluator": 4,
+    "evaluator_id_max_scalars": 32,
+    "item_id_max_scalars": 32,
+    "reason_max_scalars": 400,
+    "evidence_max_scalars": 200,
+    "max_missing_flags_per_item": 1,
+    "reason_source_quote_rejection_threshold_scalars": 40
+  },
+  "reason_policy": {
+    "requirement": "required",
+    "instruction": "設定された評価基準に対する理由を対象言語で簡潔に説明する。"
+  },
+  "evidence_policy": {
+    "mode": "exact-quote-or-no-evidence",
+    "instruction": "主回答に逐語一致する連続した短い抜粋だけを返す。"
+  },
+  "missing_flags": [
+    {
+      "id": "DETAIL_MISSING",
+      "display_name": "詳細不足",
+      "condition": "評価項目が求める詳細が主回答にない場合。"
+    }
+  ],
+  "questions": [
+    {
+      "question_id": "q1",
+      "display_name": "合成設問",
+      "question_text": "合成fixture専用の設問です。",
+      "prompt_template": "{{question}}\n{{criteria}}\n{{answer}}",
+      "weight": 1,
+      "evaluator_ids": ["eval1"]
+    }
+  ],
+  "evaluators": [
+    {
+      "evaluator_id": "eval1",
+      "purpose": "合成fixture専用の項目別評価",
+      "target_role": "main-answer",
+      "items": [
+        {
+          "item_id": "accuracy",
+          "description": "設問に対する内容の整合性を確認する。",
+          "minimum_score": 0,
+          "maximum_score": 4,
+          "weight": 1,
+          "anchors": [
+            {
+              "score": 0,
+              "description": "必要な内容がない。"
+            },
+            {
+              "score": 4,
+              "description": "必要な内容を満たす。"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "rounding_digits": 0,
+  "aggregate_formula": {
+    "kind": "function",
+    "name": "ROUND",
+    "arguments": [
+      {
+        "kind": "binary",
+        "operator": "/",
+        "left": {
+          "kind": "function",
+          "name": "SUMPRODUCT",
+          "arguments": [
+            {
+              "kind": "setting-ref",
+              "setting_id": "question-subtotal-range"
+            },
+            {
+              "kind": "setting-ref",
+              "setting_id": "question-weight-range"
+            }
+          ]
+        },
+        "right": {
+          "kind": "function",
+          "name": "SUM",
+          "arguments": [
+            {
+              "kind": "setting-ref",
+              "setting_id": "question-weight-range"
+            }
+          ]
+        }
+      },
+      {
+        "kind": "setting-ref",
+        "setting_id": "rounding-digits"
+      }
+    ]
+  }
+}

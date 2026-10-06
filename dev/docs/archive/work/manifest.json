@@ -1,0 +1,191 @@
+{
+  "schemaVersion": 1,
+  "archivedAt": "2026-09-15",
+  "sourceCommit": "77d1dd6eee858765a619e36b6ba5f27dd9255360",
+  "sourceDirectory": "work",
+  "destinationDirectory": "dev/docs/archive/work",
+  "files": [
+    {
+      "name": "20260831-implementation-plan.md",
+      "originalBytes": 30328,
+      "originalSha256": "9ab58a89ce497642ba0e74a711f28fc93289a58a71f8db5479f2e0831490332c",
+      "archivedBytes": 30790,
+      "archivedSha256": "4f88af613cc75bcf78d2bd3abc72742f8b9280f8e93752dc625d0d2a94d9f38b"
+    },
+    {
+      "name": "20260901-2205-SystemTest-Report.md",
+      "originalBytes": 16886,
+      "originalSha256": "44eb1140080c31baa371d42c79d136fdcaac186501dea7ddfbbcf478b82e1601",
+      "archivedBytes": 17188,
+      "archivedSha256": "91119b8e12a48f586897536a87c84de413d4949822bb93a5dd4c14b67cab12ca"
+    },
+    {
+      "name": "20260901-realdata-application-result.xlsx",
+      "originalBytes": 786819,
+      "originalSha256": "913f1f0f4e94a8e47a74182c171903dc2ea2038af48c0aa214ddbd7f83a1ccd3",
+      "archivedBytes": 786819,
+      "archivedSha256": "913f1f0f4e94a8e47a74182c171903dc2ea2038af48c0aa214ddbd7f83a1ccd3"
+    },
+    {
+      "name": "20260901-realdata-application-run-evidence.json",
+      "originalBytes": 4576,
+      "originalSha256": "d268d21df515fe6663d4dfa55847086c2776e9a81fee06850ac1e2d20ef688c2",
+      "archivedBytes": 4707,
+      "archivedSha256": "38bba9fd346d3b73d05288b916f4e9c5c53c49de7672daad8fe41a4128da05f3"
+    },
+    {
+      "name": "20260901-realdata-application-run-report.md",
+      "originalBytes": 4585,
+      "originalSha256": "b6bb081cb88a1732bed4d5e9c7bb8b309df607587d270869c4d0c3fa20c4c0f8",
+      "archivedBytes": 4684,
+      "archivedSha256": "077315f0dfa4cf9df6ecd8d7528800b821919c3863b4968139b313df47e6693d"
+    },
+    {
+      "name": "20260901-realdata-error-investigation-report.md",
+      "originalBytes": 7013,
+      "originalSha256": "9460560326ea8421207d3fa831583b8dc8ff7fc3880def184e6e40aee5d01cc7",
+      "archivedBytes": 7123,
+      "archivedSha256": "1b69b84a58598fed68215cca13976c8af59a5e4fd70d655161b87dd5edca5ca0"
+    },
+    {
+      "name": "20260901-realdata-recalculation-evidence.json",
+      "originalBytes": 2123,
+      "originalSha256": "cf29f3a03f08cffba158ba7b7d9f3fe02443093710a53ef06a935871b05abc56",
+      "archivedBytes": 2194,
+      "archivedSha256": "7d92769e654af480f532d11f666cdd2e4c71d5022e7386822f421b99a9554e29"
+    },
+    {
+      "name": "20260901-realdata-system-test-evidence.json",
+      "originalBytes": 2842,
+      "originalSha256": "2fd67e6cb32e138fcd6ed552b86d0f4c2ff3e60b81e63334e94eef53686950b1",
+      "archivedBytes": 2935,
+      "archivedSha256": "887a393132a54c79463232d13c4bd3900e18f9952da8a06c96d474f302277061"
+    },
+    {
+      "name": "20260901-realdata-system-test-report.md",
+      "originalBytes": 5205,
+      "originalSha256": "d4f14b6667108165dc54b7c0e33e1203e6d840dd4f8429561124c13b40095882",
+      "archivedBytes": 5303,
+      "archivedSha256": "3b8a9284503649127253ae694c805adb1002a15bd3250a4764a904a1f30a7fe0"
+    },
+    {
+      "name": "20260901-v4-implementation-plan.md",
+      "originalBytes": 10439,
+      "originalSha256": "2e96439368ed0f6a53c2dd9f9cbfbdf25a95d595ea22ccf99815ab5b8c579a13",
+      "archivedBytes": 10627,
+      "archivedSha256": "5fb80c04171b13122d8b5c6388aa3c656ea03099e8728ef9ee36eaf9cf6ae3af"
+    },
+    {
+      "name": "20260902-readme-end-user-release-plan.md",
+      "originalBytes": 8773,
+      "originalSha256": "076a8a34aeb7db3364808f03797b4842af5c4c7b0394467b97213db7cca2f682",
+      "archivedBytes": 9035,
+      "archivedSha256": "246738d129b52e226a1cec55d921f7ce80918103740627cb84cb915b3ed7f028"
+    },
+    {
+      "name": "20260902-version-management-investigation-evidence.json",
+      "originalBytes": 3436,
+      "originalSha256": "bc41104346168d315e7fefeb47f5f45b127c47e091119f69eeadf1c2775efc1c",
+      "archivedBytes": 3523,
+      "archivedSha256": "8997c21e5639944ff3d9454c8d8861eb594704ac02558a41ae65514c1f02b813"
+    },
+    {
+      "name": "20260902-version-management-investigation-report.md",
+      "originalBytes": 55033,
+      "originalSha256": "a2ceddf5b118c35b7db4b2798bc290184fadb1cd336a6efca3decbca96c68ca6",
+      "archivedBytes": 56147,
+      "archivedSha256": "357a43dfaf34fd23ce575109bb29ae663e0132544acf7b2b766578c9961d08eb"
+    },
+    {
+      "name": "20260903-0605-TaskExecutionPlan.md",
+      "originalBytes": 34806,
+      "originalSha256": "cb9f2929114c5dec48f055969a3ad500fa835855ef595d054bf74786ff3dbe10",
+      "archivedBytes": 35516,
+      "archivedSha256": "d3f6e21c274b1896a26409ebcee24bbdffa336fa409f7399e2eb99901713e44c"
+    },
+    {
+      "name": "20260903-0923-windows-macos-setup-simplification-plan.md",
+      "originalBytes": 46106,
+      "originalSha256": "b6ed2aa01880ed076d199608c55c43a405489e6beb1dde5ae2f3a1d55a4be466",
+      "archivedBytes": 46775,
+      "archivedSha256": "37ccaea06a764889ea698f3567347a452394e73a424b58aeab4ead5a67d530b2"
+    },
+    {
+      "name": "20260903-1655-TaskExecutionPlan.md",
+      "originalBytes": 59928,
+      "originalSha256": "12f61374b901e9814323d2632c2860187d30193bd051adf52e2b8e43455aa6b3",
+      "archivedBytes": 61025,
+      "archivedSha256": "1f46ee2dba313bbf363ff553c7a9259ad13463c95c86b9c3f847be9337787a02"
+    },
+    {
+      "name": "20260903-setup-simplification-execution-record.md",
+      "originalBytes": 50530,
+      "originalSha256": "2c13ac1c1ea3d09ecf20b72e560dc7c6269cffe9a06a7542b1ea97b03b61139c",
+      "archivedBytes": 51165,
+      "archivedSha256": "67b11dd08f21f13a0fb1ffb055d127af29b2ab874629dc4765e082218ebc1e34"
+    },
+    {
+      "name": "20260903-v1.0.1-release-recovery-plan.md",
+      "originalBytes": 5455,
+      "originalSha256": "2d87d8b59d7672cdf3eda3ad24959cbe981c66de08c045bf8a869f0ac2c934bc",
+      "archivedBytes": 5536,
+      "archivedSha256": "af9155fbcc1da1daeec64de6f2ec8e960a4ee7ccd6ab3ca6c64699869df8fcf1"
+    },
+    {
+      "name": "20260904-publication-remediation-execution-record.md",
+      "originalBytes": 58102,
+      "originalSha256": "b92db77ec9a70ec0e9cd4726a8dde6aab19dff1e96558a85b81eae6359866311",
+      "archivedBytes": 59111,
+      "archivedSha256": "797071a6448e85448194876b0b15a543f9fa65fb61ee7a028b055acfdd8507e9"
+    },
+    {
+      "name": "20260904-publication-remediation-plan.md",
+      "originalBytes": 56398,
+      "originalSha256": "53c9c4c48d1ccd6264d19a2858b0b698a80727df6ec3d6fbb28930dcffa344eb",
+      "archivedBytes": 57617,
+      "archivedSha256": "7c903a42d63708ce93b04957ce9615242f09e5271bbedea8fba20b446775f075"
+    },
+    {
+      "name": "20260905-adversarial-review.md",
+      "originalBytes": 12633,
+      "originalSha256": "f1683a25a975d8d412c351da2cf8ea97c8d6de57a498bd8b37845576b5552007",
+      "archivedBytes": 12691,
+      "archivedSha256": "2a1e366b9eb228f9f1251be6bdb55574a52a2ad294c68ec40e04790897f2e3bd"
+    },
+    {
+      "name": "20260906-0617-one-action-startup-plan.md",
+      "originalBytes": 55972,
+      "originalSha256": "a8fd624e9cafd80c3ed5068dd1ba943d87715e94a555522021fac5fbf19bb614",
+      "archivedBytes": 56637,
+      "archivedSha256": "fe76aefab9f54cf1eb064953eb54932f1200722656d59245078f1d71a279537e"
+    },
+    {
+      "name": "20260906-one-action-startup-execution.md",
+      "originalBytes": 17194,
+      "originalSha256": "7edeefd724fb579f4a1f4117477c0284a9500a741a316dae42086a9e43a19083",
+      "archivedBytes": 17362,
+      "archivedSha256": "a1325e0e4ace884854846073e7389917b4980eccfbfbd96d74f361d4a0e10e22"
+    },
+    {
+      "name": "20260907-ui-settings-execution-record.md",
+      "originalBytes": 15952,
+      "originalSha256": "4a58c2ab929dfcfb16c946a64fd5cff07b7af80e9d911bd9f7a9d4df8ab54a63",
+      "archivedBytes": 16150,
+      "archivedSha256": "5388db4b29c6aaae70419e9a54231a7850284410658e8efde23ee2907c077d73"
+    },
+    {
+      "name": "20260907-ui-settings-redesign-plan-v2.md",
+      "originalBytes": 73771,
+      "originalSha256": "e27fa28bb565631ac3b5a0201f3c722012de1af936b4607c2fe6a75930f9d4a7",
+      "archivedBytes": 74499,
+      "archivedSha256": "2c1aff25d43cdcc97032bf6000b7e1ce0da95ba81db03ed7fb4296e9bca5be86"
+    },
+    {
+      "name": "20260907-ui-settings-redesign-plan.md",
+      "originalBytes": 71586,
+      "originalSha256": "757eda059e686db631a027fd0b8e8c254c51c3ed5986c6291f5d514fe2a536ae",
+      "archivedBytes": 72321,
+      "archivedSha256": "d516f5a57113b18376077e10daf614334670248c2c76da7c12c406b103ef777e"
+    }
+  ]
+}

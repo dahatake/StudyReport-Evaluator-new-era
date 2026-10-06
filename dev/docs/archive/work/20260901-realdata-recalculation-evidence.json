@@ -1,0 +1,71 @@
+{
+  "schema_version": "1.0",
+  "run_id": "REAL-WORKBOOK-RETAINED-OUTPUT-20260901-0912-EXTERNAL-RECALCULATION",
+  "measured_at_utc": "2026-09-01T09:28:20.7450470\u002B00:00",
+  "source_output_logical_name": "20260901-realdata-application-result.xlsx",
+  "content_in_evidence": false,
+  "source_output_calculation_chain_present": false,
+  "spreadsheet": "Microsoft Excel",
+  "spreadsheet_version": "16.0",
+  "formula_count": 11130,
+  "formula_error_count": 0,
+  "empty_formula_cache_count": 2921,
+  "missing_formula_cache_count": 0,
+  "open_xml_schema_error_count": 8392,
+  "open_xml_schema_error_categories": [
+    {
+      "id": "Sem_MissingIndexedElement",
+      "error_type": "Semantic",
+      "node_local_name": "c",
+      "node_namespace": "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
+      "part_uri": "/xl/calcChain.xml",
+      "count": 8392
+    }
+  ],
+  "calculation_chain_analysis": {
+    "calculation_chain_present": true,
+    "calculation_chain_cell_count": 11130,
+    "unique_sheet_and_reference_count": 11130,
+    "explicit_sheet_id_count": 11130,
+    "explicit_sheet_id_values": [
+      5
+    ],
+    "invalid_cell_reference_count": 0,
+    "one_based_unresolved_reference_count": 11130,
+    "zero_based_unresolved_reference_count": 11130,
+    "sheet_id_unresolved_reference_count": 0,
+    "formulas_per_sheet": [
+      {
+        "sheet_ordinal": 1,
+        "sheet_id": 3,
+        "formula_cell_count": 0
+      },
+      {
+        "sheet_ordinal": 2,
+        "sheet_id": 4,
+        "formula_cell_count": 0
+      },
+      {
+        "sheet_ordinal": 3,
+        "sheet_id": 5,
+        "formula_cell_count": 11130
+      },
+      {
+        "sheet_ordinal": 4,
+        "sheet_id": 6,
+        "formula_cell_count": 0
+      }
+    ]
+  },
+  "only_calculation_chain_semantic_errors": true,
+  "original_output_unchanged": true,
+  "calculation_chain_removal_probe": {
+    "formula_count": 11130,
+    "formula_error_count": 0,
+    "open_xml_schema_error_count": 0,
+    "calculation_chain_present": false
+  },
+  "result": "PASS_ROOT_CAUSE_CONFIRMED",
+  "temporary_copy_absent": true,
+  "failure_present": false
+}

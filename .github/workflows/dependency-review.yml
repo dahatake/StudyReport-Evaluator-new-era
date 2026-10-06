@@ -1,0 +1,26 @@
+name: Dependency review
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-review:
+    name: Review dependency changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      # Fails the pull request when it adds a dependency with a known vulnerability (moderate or higher)
+      # or a license outside the allow list used by the existing dependencies.
+      - name: Review dependencies
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: moderate
+          allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, MS-PL, 0BSD, ISC, Unlicense

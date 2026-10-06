@@ -1,0 +1,495 @@
+name: Publish release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing draft release tag to publish (for example, v0.8.1)
+        required: true
+        type: string
+      candidate_run_id:
+        description: Release candidate workflow run ID that produced the draft assets
+        required: true
+        type: string
+      clean_host_evidence_json:
+        description: Clean-host single-file evidence JSON received from a human-run clean host
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.tag }}
+  cancel-in-progress: false
+
+env:
+  CI: "true"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1"
+
+jobs:
+  publish:
+    name: Verify the draft and publish after approval
+    runs-on: windows-latest
+    timeout-minutes: 60
+    environment: publish
+
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.tag }}
+
+      - name: Verify release identity
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          if ($PSVersionTable.PSEdition -cne 'Core' -or
+              $PSVersionTable.PSVersion -lt [System.Version]'7.5') {
+              throw 'PowerShell Core 7.5 or later is required.'
+          }
+          if ($env:RELEASE_TAG -cnotmatch '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$') {
+              throw "Only stable release tags are supported: $env:RELEASE_TAG"
+          }
+
+          $tagCommit = ((& git rev-list -n 1 $env:RELEASE_TAG) | Out-String).Trim()
+          $tagExitCode = $LASTEXITCODE
+          $headCommit = ((& git rev-parse HEAD) | Out-String).Trim()
+          $headExitCode = $LASTEXITCODE
+          if ($tagExitCode -ne 0 -or $headExitCode -ne 0 -or $tagCommit -cne $headCommit) {
+              throw 'The requested tag must exist and point to the checked-out commit.'
+          }
+          $tagType = ((& git cat-file -t $env:RELEASE_TAG) | Out-String).Trim()
+          if ($LASTEXITCODE -ne 0 -or $tagType -cne 'tag') {
+              throw 'The release tag must be annotated.'
+          }
+          $sourceStatus = @(& git status --porcelain=v1 --untracked-files=all)
+          if ($LASTEXITCODE -ne 0 -or $sourceStatus.Count -ne 0) {
+              throw 'The publish checkout must be clean.'
+          }
+
+          $version = $env:RELEASE_TAG.Substring(1)
+          pwsh.exe -NoLogo -NoProfile -File .\dev\version.ps1 verify -Tag $env:RELEASE_TAG -RequireClean
+          if ($LASTEXITCODE -ne 0) {
+              throw 'Release version verification failed.'
+          }
+
+          $changelog = Get-Content -LiteralPath '.\CHANGELOG.md' -Raw -Encoding utf8
+          if (-not [regex]::IsMatch(
+                  $changelog,
+                  "(?m)^## \[$([regex]::Escape($version))\] - \d{4}-\d{2}-\d{2}\s*$")) {
+              throw "CHANGELOG.md does not contain a dated $version section."
+          }
+
+      - name: Validate and persist received clean-host evidence
+        shell: pwsh
+        env:
+          CLEAN_HOST_EVIDENCE_JSON: ${{ inputs.clean_host_evidence_json }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:CLEAN_HOST_EVIDENCE_JSON)) {
+              throw 'The clean-host evidence JSON input must not be empty.'
+          }
+
+          $utf8 = [System.Text.UTF8Encoding]::new($false, $true)
+          $bytes = $utf8.GetBytes($env:CLEAN_HOST_EVIDENCE_JSON)
+          if ($bytes.Length -le 0) {
+              throw 'The clean-host evidence JSON input must not be empty.'
+          }
+          if ($bytes.Length -gt 65536) {
+              throw 'The clean-host evidence JSON input exceeds the 64 KiB UTF-8 limit.'
+          }
+
+          $cleanHostPath = Join-Path $env:RUNNER_TEMP 'windows-singlefile-clean-host.evidence.json'
+          [System.IO.File]::WriteAllText($cleanHostPath, $env:CLEAN_HOST_EVIDENCE_JSON, $utf8)
+          "CLEAN_HOST_EVIDENCE_PATH=$cleanHostPath" |
+              Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Verify the candidate run and download its evidence
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+        run: |
+          if ($env:CANDIDATE_RUN_ID -cnotmatch '^[1-9][0-9]*$') {
+              throw 'The candidate run ID must be a positive integer.'
+          }
+
+          $runJson = @(& gh api "repos/$env:GITHUB_REPOSITORY/actions/runs/$env:CANDIDATE_RUN_ID")
+          if ($LASTEXITCODE -ne 0 -or $runJson.Count -eq 0) {
+              throw 'Unable to retrieve the candidate workflow run.'
+          }
+          try {
+              $run = ConvertFrom-Json -InputObject ($runJson -join "`n") -DateKind String
+          }
+          catch {
+              throw 'The candidate workflow run response was not valid JSON.'
+          }
+          $tagCommit = ((& git rev-list -n 1 $env:RELEASE_TAG) | Out-String).Trim()
+          if ($LASTEXITCODE -ne 0) {
+              throw 'Unable to resolve the requested tag commit.'
+          }
+          $workflowPath = [string]$run.path
+          $workflowPathParts = @($workflowPath -csplit '@', 2)
+          $workflowPathValid =
+              $workflowPath.Length -le 512 -and
+              $workflowPathParts.Count -in @(1, 2) -and
+              $workflowPathParts[0] -ceq '.github/workflows/release.yml' -and
+              ($workflowPathParts.Count -eq 1 -or
+                  ($workflowPathParts[1] -cmatch '\Arefs/(?:heads|tags)/[A-Za-z0-9._/-]+\z' -and
+                      $workflowPathParts[1] -cnotmatch '(?:\A|/)\.\.?(?:/|\z)|//|\.lock(?:/|\z)'))
+          if ([string]$run.repository.full_name -cne $env:GITHUB_REPOSITORY -or
+              [string]$run.event -cne 'workflow_dispatch' -or
+              -not $workflowPathValid -or
+              [string]$run.conclusion -cne 'success' -or
+              [string]$run.head_sha -cne $tagCommit) {
+              throw 'The candidate run must have succeeded for the exact tagged commit.'
+          }
+
+          $artifactName = "release-candidate-$env:RELEASE_TAG-$env:CANDIDATE_RUN_ID"
+          $artifactJson = @(& gh api "repos/$env:GITHUB_REPOSITORY/actions/runs/$env:CANDIDATE_RUN_ID/artifacts?per_page=100")
+          if ($LASTEXITCODE -ne 0 -or $artifactJson.Count -eq 0) {
+              throw 'Unable to retrieve candidate workflow artifacts.'
+          }
+          try {
+              $artifactResponse = ConvertFrom-Json -InputObject ($artifactJson -join "`n") -DateKind String
+          }
+          catch {
+              throw 'The candidate workflow artifact response was not valid JSON.'
+          }
+          $matchingArtifacts = @($artifactResponse.artifacts | Where-Object {
+                  [string]$_.name -ceq $artifactName -and -not [bool]$_.expired
+              })
+          if ($matchingArtifacts.Count -ne 1) {
+              throw 'The candidate control artifact must exist exactly once on the candidate run.'
+          }
+
+          $controlRoot = Join-Path $env:RUNNER_TEMP 'candidate-control'
+          New-Item -ItemType Directory -Path $controlRoot -Force | Out-Null
+          gh run download $env:CANDIDATE_RUN_ID `
+              --repo $env:GITHUB_REPOSITORY `
+              --name $artifactName `
+              --dir $controlRoot
+          if ($LASTEXITCODE -ne 0) {
+              throw 'Unable to download the candidate control evidence.'
+          }
+
+          $expectedControl = [System.Collections.Generic.HashSet[string]]::new(
+              [string[]]@(
+                  'release-candidate-record.json',
+                  'StudyReportEvaluator-win-x64.exe.evidence.json',
+                  'StudyReportEvaluator-win-x64.evidence.json'),
+              [System.StringComparer]::Ordinal)
+          $downloaded = @(Get-ChildItem -LiteralPath $controlRoot -Recurse -File)
+          $actualControl = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+          foreach ($item in $downloaded) {
+              if (-not $actualControl.Add($item.Name)) {
+                  throw 'Duplicate basenames are not allowed in candidate control evidence.'
+              }
+          }
+
+          if ($actualControl.Count -ne $expectedControl.Count -or
+              @($expectedControl | Where-Object { -not $actualControl.Contains($_) }).Count -ne 0) {
+              throw 'Candidate control evidence must contain exactly candidate record and EXE/ZIP evidence.'
+          }
+
+          "CANDIDATE_CONTROL_ROOT=$controlRoot" |
+              Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Verify the draft release assets and download exact files
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          $release = gh release view $env:RELEASE_TAG `
+              --repo $env:GITHUB_REPOSITORY `
+              --json isDraft,tagName,assets | ConvertFrom-Json -DateKind String
+          if (-not $release.isDraft) {
+              throw 'Only an existing draft release can be published by this workflow.'
+          }
+          if ([string]$release.tagName -cne $env:RELEASE_TAG) {
+              throw 'The draft release tag does not match the requested tag.'
+          }
+
+          $expectedDraftAssets = @(
+              'StudyReportEvaluator-win-x64.exe',
+              'StudyReportEvaluator-win-x64.exe.sha256',
+              'StudyReportEvaluator-win-x64.zip',
+              'StudyReportEvaluator-win-x64.zip.sha256')
+          $releaseAssetNames = @($release.assets | ForEach-Object { [string]$_.name })
+          if ($releaseAssetNames.Count -ne $expectedDraftAssets.Count -or
+              @($releaseAssetNames | Select-Object -Unique).Count -ne $releaseAssetNames.Count -or
+              @($expectedDraftAssets | Where-Object { $_ -cnotin $releaseAssetNames }).Count -ne 0) {
+              throw 'The draft must carry exactly EXE/ZIP assets and sidecars.'
+          }
+
+          $downloadRoot = Join-Path $env:RUNNER_TEMP 'draft-assets'
+          New-Item -ItemType Directory -Path $downloadRoot -Force | Out-Null
+          foreach ($assetName in $expectedDraftAssets) {
+              gh release download $env:RELEASE_TAG `
+                  --repo $env:GITHUB_REPOSITORY `
+                  --pattern $assetName `
+                  --dir $downloadRoot
+              if ($LASTEXITCODE -ne 0) {
+                  throw 'Unable to download all required draft release assets.'
+              }
+          }
+
+          $downloadedAssets = @(Get-ChildItem -LiteralPath $downloadRoot -Recurse -File)
+          $actualDownloaded = @($downloadedAssets | ForEach-Object { $_.Name })
+          if ($actualDownloaded.Count -ne $expectedDraftAssets.Count -or
+              @($actualDownloaded | Select-Object -Unique).Count -ne $actualDownloaded.Count -or
+              @($expectedDraftAssets | Where-Object { $_ -cnotin $actualDownloaded }).Count -ne 0) {
+              throw 'Downloaded draft assets must be exactly EXE/ZIP assets and sidecars with no extras.'
+          }
+
+          "DRAFT_ASSET_ROOT=$downloadRoot" |
+              Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Build and validate final publish controls
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+        run: |
+          $candidateRoot = Join-Path $env:RUNNER_TEMP 'publish-candidate-root'
+          New-Item -ItemType Directory -Path $candidateRoot -Force | Out-Null
+
+          $expectedControl = @(
+              'release-candidate-record.json',
+              'StudyReportEvaluator-win-x64.exe.evidence.json',
+              'StudyReportEvaluator-win-x64.evidence.json')
+          foreach ($fileName in $expectedControl) {
+              $foundItems = @(Get-ChildItem -LiteralPath $env:CANDIDATE_CONTROL_ROOT -Recurse -File | Where-Object { $_.Name -ceq $fileName })
+              if ($foundItems.Count -ne 1) {
+                  throw 'Candidate control evidence set is incomplete or ambiguous.'
+              }
+              Copy-Item -LiteralPath $foundItems[0].FullName -Destination (Join-Path $candidateRoot $fileName)
+          }
+
+          $expectedDraftAssets = @(
+              'StudyReportEvaluator-win-x64.exe',
+              'StudyReportEvaluator-win-x64.exe.sha256',
+              'StudyReportEvaluator-win-x64.zip',
+              'StudyReportEvaluator-win-x64.zip.sha256')
+          foreach ($fileName in $expectedDraftAssets) {
+              $assetPath = Join-Path $env:DRAFT_ASSET_ROOT $fileName
+              if (-not (Test-Path -LiteralPath $assetPath -PathType Leaf)) {
+                  throw 'A required draft asset is missing from the downloaded candidate set.'
+              }
+              Copy-Item -LiteralPath $assetPath -Destination (Join-Path $candidateRoot $fileName)
+          }
+
+          $candidateRootFiles = @(Get-ChildItem -LiteralPath $candidateRoot -File)
+          $expectedCandidateRootNames = @(
+              'release-candidate-record.json',
+              'StudyReportEvaluator-win-x64.exe',
+              'StudyReportEvaluator-win-x64.exe.sha256',
+              'StudyReportEvaluator-win-x64.exe.evidence.json',
+              'StudyReportEvaluator-win-x64.zip',
+              'StudyReportEvaluator-win-x64.zip.sha256',
+              'StudyReportEvaluator-win-x64.evidence.json')
+          $actualCandidateRootNames = @($candidateRootFiles | ForEach-Object { $_.Name })
+          if ($actualCandidateRootNames.Count -ne $expectedCandidateRootNames.Count -or
+              @($actualCandidateRootNames | Select-Object -Unique).Count -ne $actualCandidateRootNames.Count -or
+              @($expectedCandidateRootNames | Where-Object { $_ -cnotin $actualCandidateRootNames }).Count -ne 0) {
+              throw 'The private candidate root must contain the exact combined control/public candidate file set.'
+          }
+
+          $finalControlRoot = Join-Path $env:RUNNER_TEMP 'final-control'
+          & .\scripts\build-platform-release-matrix.ps1 `
+              -Mode Final `
+              -ExpectedRepository $env:GITHUB_REPOSITORY `
+              -CandidateRunId $env:CANDIDATE_RUN_ID `
+              -CandidateRecordPath (Join-Path $candidateRoot 'release-candidate-record.json') `
+              -CleanHostEvidencePath $env:CLEAN_HOST_EVIDENCE_PATH `
+              -OutputDirectory $finalControlRoot
+          if (-not $?) {
+              throw 'Final publish control generation failed.'
+          }
+
+          "FINAL_CONTROL_ROOT=$finalControlRoot" |
+              Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Output 'The clean-host evidence is a received human record. Hash matching binds candidate identity and bytes but does not itself prove human execution.'
+
+      - name: Upload final publish control evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-final-control-${{ inputs.tag }}-${{ github.run_id }}
+          path: |
+            ${{ env.FINAL_CONTROL_ROOT }}/platform-release-matrix.json
+            ${{ env.FINAL_CONTROL_ROOT }}/windows-singlefile-clean-host.evidence.json
+            ${{ env.FINAL_CONTROL_ROOT }}/release-candidate-record.json
+            ${{ env.FINAL_CONTROL_ROOT }}/StudyReportEvaluator-win-x64.exe.evidence.json
+            ${{ env.FINAL_CONTROL_ROOT }}/StudyReportEvaluator-win-x64.evidence.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Revalidate exact draft bytes and publish
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $expectedAssets = @(
+              'StudyReportEvaluator-win-x64.exe',
+              'StudyReportEvaluator-win-x64.exe.sha256',
+              'StudyReportEvaluator-win-x64.zip',
+              'StudyReportEvaluator-win-x64.zip.sha256')
+
+          function Get-ReleaseAssetIdentity {
+              param([bool] $ExpectedDraft, [string[]] $ExpectedNames)
+
+              $releaseJson = @(& gh release view $env:RELEASE_TAG `
+                      --repo $env:GITHUB_REPOSITORY `
+                      --json isDraft,tagName,assets)
+              if ($LASTEXITCODE -ne 0 -or $releaseJson.Count -eq 0) {
+                  throw 'Unable to retrieve release asset identity.'
+              }
+              try {
+                  $release = ConvertFrom-Json -InputObject ($releaseJson -join "`n") -DateKind String
+              }
+              catch {
+                  throw 'The release asset identity response was not valid JSON.'
+              }
+              if ([bool]($release.isDraft) -ne $ExpectedDraft -or
+                  [string]$release.tagName -cne $env:RELEASE_TAG) {
+                  throw 'The release state or tag changed during publication.'
+              }
+
+              $assets = @($release.assets)
+              $assetNames = @($assets | ForEach-Object { [string]$_.name })
+              if ($assetNames.Count -ne $ExpectedNames.Count -or
+                  @($assetNames | Select-Object -Unique).Count -ne $assetNames.Count -or
+                  @($ExpectedNames | Where-Object { $_ -cnotin $assetNames }).Count -ne 0) {
+                  throw 'The release asset set changed during publication.'
+              }
+
+              foreach ($expectedName in $ExpectedNames) {
+                  $matchingAssets = @($assets | Where-Object { [string]$_.name -ceq $expectedName })
+                  if ($matchingAssets.Count -ne 1) {
+                      throw 'Release asset identity is missing or ambiguous.'
+                  }
+                  $asset = $matchingAssets[0]
+                  $assetId = [string]$asset.id
+                  try { $assetSize = [long]$asset.size }
+                  catch { throw 'Release asset size was invalid.' }
+                  $assetDigest = [string]$asset.digest
+                  $assetUpdatedAt = [string]$asset.updatedAt
+                  if ([string]::IsNullOrWhiteSpace($assetId) -or $assetSize -le 0 -or
+                      [string]::IsNullOrWhiteSpace($assetUpdatedAt) -or
+                      (-not [string]::IsNullOrWhiteSpace($assetDigest) -and
+                          $assetDigest -cnotmatch '\Asha256:[0-9A-Fa-f]{64}\z')) {
+                      throw 'Release asset identity metadata was invalid.'
+                  }
+                  [ordered]@{
+                      id = $assetId
+                      name = $expectedName
+                      size = $assetSize
+                      digest = $assetDigest
+                      updatedAt = $assetUpdatedAt
+                  } | ConvertTo-Json -Compress
+              }
+          }
+
+          $downloadSnapshot = @(Get-ReleaseAssetIdentity -ExpectedDraft $true -ExpectedNames $expectedAssets)
+          $revalidationRoot = Join-Path $env:RUNNER_TEMP 'prepublish-revalidation'
+          if (Test-Path -LiteralPath $revalidationRoot) {
+              throw 'The pre-publication revalidation directory must not already exist.'
+          }
+          [void][System.IO.Directory]::CreateDirectory($revalidationRoot)
+
+          $controlNames = @(
+              'platform-release-matrix.json',
+              'windows-singlefile-clean-host.evidence.json',
+              'release-candidate-record.json',
+              'StudyReportEvaluator-win-x64.exe.evidence.json',
+              'StudyReportEvaluator-win-x64.evidence.json')
+          foreach ($fileName in $controlNames) {
+              $sourcePath = Join-Path $env:FINAL_CONTROL_ROOT $fileName
+              if (-not (Test-Path -LiteralPath $sourcePath -PathType Leaf)) {
+                  throw 'A required final control file is missing before publication.'
+              }
+              Copy-Item -LiteralPath $sourcePath -Destination (Join-Path $revalidationRoot $fileName)
+          }
+
+          foreach ($assetName in $expectedAssets) {
+              & gh release download $env:RELEASE_TAG `
+                  --repo $env:GITHUB_REPOSITORY `
+                  --pattern $assetName `
+                  --dir $revalidationRoot
+              if ($LASTEXITCODE -ne 0) {
+                  throw 'Unable to re-download exact draft assets before publication.'
+              }
+          }
+
+          $expectedRevalidationNames = @($controlNames + $expectedAssets)
+          $revalidationItems = @(Get-ChildItem -LiteralPath $revalidationRoot -Force)
+          $revalidationNames = @($revalidationItems | ForEach-Object { $_.Name })
+          if ($revalidationItems.Count -ne $expectedRevalidationNames.Count -or
+              @($revalidationItems | Where-Object { $_.PSIsContainer }).Count -ne 0 -or
+              @($revalidationNames | Select-Object -Unique).Count -ne $revalidationNames.Count -or
+              @($expectedRevalidationNames | Where-Object { $_ -cnotin $revalidationNames }).Count -ne 0) {
+              throw 'The pre-publication revalidation set contains missing, duplicate, or extra entries.'
+          }
+
+          $tagCommit = ((& git rev-list -n 1 $env:RELEASE_TAG) | Out-String).Trim()
+          if ($LASTEXITCODE -ne 0) {
+              throw 'Unable to resolve the tagged commit before publication.'
+          }
+          $validationOutput = @(& .\scripts\validate-platform-release-matrix.ps1 `
+                  -MatrixPath (Join-Path $revalidationRoot 'platform-release-matrix.json') `
+                  -ArtifactDirectory $revalidationRoot `
+                  -ExpectedProductVersion ($env:RELEASE_TAG.Substring(1)) `
+                  -ExpectedSourceCommit $tagCommit `
+                  -ExpectedRepository $env:GITHUB_REPOSITORY `
+                  -ExpectedCandidateRunId $env:CANDIDATE_RUN_ID)
+          $validationSucceeded = $?
+          if (-not $validationSucceeded -or $validationOutput.Count -eq 0) {
+              throw 'Pre-publication C02 validation failed.'
+          }
+          try {
+              $validation = ConvertFrom-Json -InputObject ($validationOutput -join "`n") -DateKind String
+          }
+          catch {
+              throw 'Pre-publication C02 validation returned invalid JSON.'
+          }
+          if ([string]$validation.status -cne 'PASS' -or
+              [string]$validation.sourceCommit -cne $tagCommit -or
+              [string]$validation.candidate.repository -cne $env:GITHUB_REPOSITORY -or
+              [string]$validation.candidate.runId -cne $env:CANDIDATE_RUN_ID) {
+              throw 'Pre-publication C02 validation did not bind the expected candidate.'
+          }
+
+          $prePublishSnapshot = @(Get-ReleaseAssetIdentity -ExpectedDraft $true -ExpectedNames $expectedAssets)
+          if (($downloadSnapshot -join "`n") -cne ($prePublishSnapshot -join "`n")) {
+              throw 'Draft asset identity changed during byte revalidation.'
+          }
+
+          gh release edit $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --draft=false
+          if ($LASTEXITCODE -ne 0) {
+              throw 'Publishing the release failed.'
+          }
+
+          try {
+              $publishedSnapshot = @(Get-ReleaseAssetIdentity -ExpectedDraft $false -ExpectedNames $expectedAssets)
+              if (($prePublishSnapshot -join "`n") -cne ($publishedSnapshot -join "`n")) {
+                  throw 'Published asset identity changed after publication.'
+              }
+          }
+          catch {
+              & gh release edit $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --draft=true 2>$null
+              if ($LASTEXITCODE -ne 0) {
+                  throw 'Post-publication verification failed and restoring draft state failed.'
+              }
+              throw 'Post-publication verification failed; the release was restored to draft state.'
+          }
+
+          Write-Output "Published $env:RELEASE_TAG with the exact C02-revalidated asset identities."

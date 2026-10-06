@@ -1,0 +1,61 @@
+<UserControl
+    x:Class="StudyReportEvaluator.App.Views.JobCostView"
+    x:DataType="viewModels:JobCostViewModel"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:viewModels="using:StudyReportEvaluator.App.ViewModels"
+    FontSize="14" AutomationProperties.Name="この実行のコスト詳細とジョブログ">
+  <UserControl.Styles>
+    <Style Selector="Button, CheckBox, TabItem, TextBox">
+      <Setter Property="MinHeight" Value="44" />
+      <Setter Property="MinWidth" Value="44" />
+      <Setter Property="FontSize" Value="14" />
+    </Style>
+    <Style Selector="TextBlock">
+      <Setter Property="FontSize" Value="14" />
+    </Style>
+  </UserControl.Styles>
+  <Grid RowDefinitions="*,Auto" RowSpacing="4">
+    <TabControl x:Name="CostTabs" AutomationProperties.Name="コスト詳細またはジョブログを選択">
+      <TabItem x:Name="DetailsTab" Header="コスト詳細" AutomationProperties.Name="コスト詳細">
+        <TextBox x:Name="CostDetailsTextBox" Text="{Binding DetailsText, Mode=OneWay}"
+                 IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                 AutomationProperties.Name="この実行のコスト詳細・読取専用・選択してコピー可能" />
+      </TabItem>
+      <TabItem x:Name="LogTab" Header="ジョブログ" AutomationProperties.Name="ジョブログ">
+        <Grid RowDefinitions="44,*,Auto" RowSpacing="4">
+          <CheckBox x:Name="AutoFollowCheckBox" Content="最新ログへ自動追従"
+                    IsChecked="{Binding AutoFollow, Mode=TwoWay}"
+                    AutomationProperties.Name="最新ログへ自動追従。オフは表示更新を一時停止して閲覧位置と選択を保持"
+                    ToolTip.Tip="オフの間は表示を固定します。オンにすると最新200行へ更新します。全件はログファイルで確認してください。" />
+          <ScrollViewer x:Name="LogScrollViewer" Grid.Row="1"
+                        HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+            <!-- Text is updated explicitly so paused readers keep text, selection, and offset. -->
+            <TextBox x:Name="LogTextBox" IsReadOnly="True" AcceptsReturn="True" TextWrapping="NoWrap"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                     AutomationProperties.Name="ジョブログの最新200行まで・読取専用・選択してコピー可能" />
+          </ScrollViewer>
+          <TextBlock Grid.Row="2" Text="追従オフ: 表示更新を一時停止中（オンで最新200行へ）"
+                     IsVisible="{Binding !AutoFollow}" TextWrapping="Wrap" />
+        </Grid>
+      </TabItem>
+    </TabControl>
+    <ScrollViewer Grid.Row="1" MaxHeight="140" HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto" Focusable="True"
+                  AutomationProperties.Name="ログ保存状態とログ操作・使用量の注意書き">
+      <StackPanel Spacing="4">
+        <TextBlock x:Name="LogStatusText" Text="{Binding LogStatusText}" TextWrapping="Wrap" />
+        <WrapPanel ItemSpacing="8" LineSpacing="4">
+          <Button x:Name="OpenLogButton" Content="ログを開く" Command="{Binding OpenLogCommand}"
+                  AutomationProperties.Name="このジョブのログを既定のアプリで開く" />
+          <Button x:Name="OpenDirectoryButton" Content="保存先を開く" Command="{Binding OpenDirectoryCommand}"
+                  AutomationProperties.Name="このジョブのログ保存先を開く" />
+        </WrapPanel>
+        <TextBlock x:Name="OpenStatusText" Text="{Binding OpenStatusText}" TextWrapping="Wrap" />
+        <TextBlock Text="GitHubから取得できた使用量です。請求確定額・アカウント全体の利用量ではありません。ログ表示は最新200行まで、全件はファイルで確認できます。"
+                   TextWrapping="Wrap" />
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

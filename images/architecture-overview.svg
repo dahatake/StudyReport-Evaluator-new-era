@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+  <title id="title">StudyReport EvaluatorとGitHub Copilot CLIの関係</title>
+  <desc id="desc">Windows PC上の利用者、入力Excel、StudyReport Evaluator、アプリに同梱されたGitHub Copilot CLI、CLIが管理するログイン情報、GitHub Copilotサービス、別ファイルとして保存される結果Excelの関係を示す。根拠はCopilotClientFactory、DurableQuantificationOrchestrator、GitHub Copilot SDK公式Architecture。</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+    </marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#0f172a" flood-opacity="0.12"/>
+    </filter>
+    <style>
+      .title { font: 700 28px "Segoe UI", "Yu Gothic UI", sans-serif; fill: #0f172a; }
+      .subtitle { font: 400 15px "Segoe UI", "Yu Gothic UI", sans-serif; fill: #475569; }
+      .boundary { fill: #f8fafc; stroke: #94a3b8; stroke-width: 2; stroke-dasharray: 8 6; }
+      .boundary-cloud { fill: #eff6ff; stroke: #60a5fa; stroke-width: 2; stroke-dasharray: 8 6; }
+      .boundary-label { font: 700 16px "Segoe UI", "Yu Gothic UI", sans-serif; fill: #334155; }
+      .card { fill: #ffffff; stroke: #cbd5e1; stroke-width: 2; filter: url(#shadow); }
+      .app { fill: #eef2ff; stroke: #6366f1; stroke-width: 2.5; filter: url(#shadow); }
+      .cli { fill: #f0fdf4; stroke: #22c55e; stroke-width: 2.5; filter: url(#shadow); }
+      .cloud { fill: #dbeafe; stroke: #2563eb; stroke-width: 2.5; filter: url(#shadow); }
+      .store { fill: #fff7ed; stroke: #f59e0b; stroke-width: 2; }
+      .heading { font: 700 19px "Segoe UI", "Yu Gothic UI", sans-serif; fill: #0f172a; }
+      .body { font: 400 15px "Segoe UI", "Yu Gothic UI", sans-serif; fill: #334155; }
+      .small { font: 400 13px "Segoe UI", "Yu Gothic UI", sans-serif; fill: #475569; }
+      .pill { fill: #ffffff; stroke: #a5b4fc; stroke-width: 1.2; }
+      .pill-text { font: 600 13px "Segoe UI", "Yu Gothic UI", sans-serif; fill: #3730a3; }
+      .arrow { fill: none; stroke: #334155; stroke-width: 2.2; marker-end: url(#arrow); }
+      .both { fill: none; stroke: #334155; stroke-width: 2.2; marker-start: url(#arrow); marker-end: url(#arrow); }
+      .dashed { fill: none; stroke: #64748b; stroke-width: 1.8; stroke-dasharray: 6 5; marker-end: url(#arrow); }
+      .label-bg { fill: #ffffff; opacity: 0.94; }
+      .label { font: 600 13px "Segoe UI", "Yu Gothic UI", sans-serif; fill: #334155; }
+      .footer { font: 400 12px "Segoe UI", "Yu Gothic UI", sans-serif; fill: #64748b; }
+    </style>
+  </defs>
+
+  <rect width="1280" height="720" fill="#ffffff"/>
+  <text x="40" y="44" class="title">StudyReport Evaluatorは、Copilotを安全な採点処理へつなぐデスクトップアプリです</text>
+  <text x="40" y="72" class="subtitle">元のExcelは変更せず、アプリ内のSDKが同梱CLIを通じてGitHub Copilotへ依頼し、結果を別のExcelへ保存します。</text>
+
+  <rect x="25" y="105" width="845" height="560" rx="20" class="boundary"/>
+  <text x="48" y="135" class="boundary-label">利用者のWindows 11 PC</text>
+  <rect x="900" y="105" width="350" height="560" rx="20" class="boundary-cloud"/>
+  <text x="923" y="135" class="boundary-label">GitHubが提供するサービス</text>
+
+  <rect x="60" y="165" width="205" height="100" rx="16" class="card"/>
+  <circle cx="105" cy="205" r="17" fill="#cbd5e1"/>
+  <path d="M78 248c4-22 15-32 27-32s23 10 27 32" fill="#cbd5e1"/>
+  <text x="148" y="204" class="heading">利用者</text>
+  <text x="148" y="229" class="body">教員・採点者</text>
+  <text x="148" y="250" class="small">確認と最終判断</text>
+
+  <rect x="60" y="385" width="205" height="100" rx="16" class="card"/>
+  <path d="M91 410h70l20 20v35H91z" fill="#ecfdf5" stroke="#16a34a" stroke-width="2"/>
+  <path d="M161 410v20h20" fill="none" stroke="#16a34a" stroke-width="2"/>
+  <text x="111" y="450" class="heading">.xlsx</text>
+  <text x="60" y="514" class="body">元のレポート</text>
+  <text x="60" y="535" class="small">read-onlyで読み込み</text>
+
+  <rect x="330" y="155" width="300" height="280" rx="20" class="app"/>
+  <text x="480" y="193" text-anchor="middle" class="heading">StudyReport Evaluator</text>
+  <text x="480" y="219" text-anchor="middle" class="body">Windowsデスクトップアプリ</text>
+  <rect x="365" y="245" width="230" height="38" rx="19" class="pill"/>
+  <text x="480" y="269" text-anchor="middle" class="pill-text">Avalonia UI（入力・設定・確認）</text>
+  <rect x="365" y="296" width="230" height="38" rx="19" class="pill"/>
+  <text x="480" y="320" text-anchor="middle" class="pill-text">Excel処理・検証・checkpoint</text>
+  <rect x="365" y="347" width="230" height="38" rx="19" class="pill"/>
+  <text x="480" y="371" text-anchor="middle" class="pill-text">GitHub Copilot SDK</text>
+  <text x="480" y="410" text-anchor="middle" class="small">AIそのものを内蔵するのではなく、</text>
+  <text x="480" y="429" text-anchor="middle" class="small">処理順序と入出力の境界を管理</text>
+
+  <rect x="675" y="185" width="165" height="190" rx="20" class="cli"/>
+  <text x="757.5" y="222" text-anchor="middle" class="heading">同梱CLI</text>
+  <text x="757.5" y="248" text-anchor="middle" class="body">GitHub Copilot</text>
+  <text x="757.5" y="269" text-anchor="middle" class="body">CLI</text>
+  <path d="M712 299h91v44h-91z" fill="#ffffff" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="722" y="326" class="small">&gt; copilot</text>
+  <text x="757.5" y="362" text-anchor="middle" class="small">manifest・版・hashを検証</text>
+
+  <rect x="675" y="475" width="165" height="105" rx="16" class="store"/>
+  <text x="757.5" y="508" text-anchor="middle" class="heading">ログイン情報</text>
+  <text x="757.5" y="533" text-anchor="middle" class="body">CLI / OSが管理</text>
+  <text x="757.5" y="557" text-anchor="middle" class="small">アプリの設定とは別</text>
+
+  <rect x="330" y="515" width="300" height="100" rx="16" class="card"/>
+  <path d="M365 537h62l18 18v37h-80z" fill="#ecfdf5" stroke="#16a34a" stroke-width="2"/>
+  <path d="M427 537v18h18" fill="none" stroke="#16a34a" stroke-width="2"/>
+  <text x="480" y="551" class="heading">別の結果 .xlsx</text>
+  <text x="480" y="578" class="body">partial / final</text>
+  <text x="480" y="599" class="small">元ファイルは上書きしない</text>
+
+  <rect x="940" y="230" width="270" height="190" rx="24" class="cloud"/>
+  <path d="M985 302c0-20 17-36 37-36 5-24 26-41 51-41 29 0 53 22 56 51 18 3 31 18 31 37 0 21-17 38-38 38H1018c-18 0-33-15-33-33 0-6 1-11 4-16z" fill="#ffffff" opacity="0.92"/>
+  <text x="1075" y="312" text-anchor="middle" class="heading">GitHub Copilot</text>
+  <text x="1075" y="339" text-anchor="middle" class="body">modelによる生成・評価</text>
+  <text x="1075" y="382" text-anchor="middle" class="small">login・状態確認・AI評価時に</text>
+  <text x="1075" y="401" text-anchor="middle" class="small">network接続</text>
+
+  <path d="M265 214 H330" class="arrow"/>
+  <rect x="268" y="186" width="86" height="22" rx="5" class="label-bg"/>
+  <text x="311" y="201" text-anchor="middle" class="label">操作・確認</text>
+
+  <path d="M265 435 C292 435 305 355 330 342" class="arrow"/>
+  <rect x="253" y="377" width="91" height="22" rx="5" class="label-bg"/>
+  <text x="299" y="392" text-anchor="middle" class="label">選択して読込</text>
+
+  <path d="M480 435 V515" class="arrow"/>
+  <rect x="491" y="463" width="92" height="22" rx="5" class="label-bg"/>
+  <text x="537" y="478" text-anchor="middle" class="label">検証後に保存</text>
+
+  <path d="M630 280 H675" class="both"/>
+  <rect x="616" y="247" width="102" height="22" rx="5" class="label-bg"/>
+  <text x="667" y="262" text-anchor="middle" class="label">stdio / JSON-RPC</text>
+
+  <path d="M840 280 H940" class="both"/>
+  <rect x="844" y="247" width="93" height="22" rx="5" class="label-bg"/>
+  <text x="890" y="262" text-anchor="middle" class="label">依頼・応答</text>
+
+  <path d="M757 375 V475" class="dashed"/>
+  <rect x="768" y="415" width="70" height="22" rx="5" class="label-bg"/>
+  <text x="803" y="430" text-anchor="middle" class="label">本人login</text>
+
+  <text x="40" y="692" class="footer">論理図。根拠: src/StudyReportEvaluator.App/Copilot/CopilotClientFactory.cs、Workflow/DurableQuantificationOrchestrator.cs、Workbooks/Checkpoint/CheckpointStore.cs、GitHub Copilot SDK公式Architecture。</text>
+</svg>

@@ -1,0 +1,332 @@
+<UserControl
+    x:Class="StudyReportEvaluator.App.Views.QuantificationDesignView"
+    x:DataType="viewModels:QuantificationDesignViewModel"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="using:Avalonia.Data.Converters"
+    xmlns:charts="using:StudyReportEvaluator.App.Views.Charts"
+    xmlns:viz="using:StudyReportEvaluator.App.Visualization"
+    xmlns:viewModels="using:StudyReportEvaluator.App.ViewModels"
+    xmlns:workspace="using:StudyReportEvaluator.App.Workspace"
+    FontSize="14"
+    Background="{DynamicResource AppCanvasBrush}"
+    Foreground="{DynamicResource AppTextBrush}"
+    AutomationProperties.AutomationId="QuantificationDesignView"
+    AutomationProperties.Name="採点設計の配点と評価概要">
+  <UserControl.Styles>
+    <Style Selector="Button, TextBox, CheckBox, ComboBox, ComboBoxItem">
+      <Setter Property="MinHeight" Value="44" />
+      <Setter Property="MinWidth" Value="44" />
+      <Setter Property="FontSize" Value="14" />
+      <Setter Property="ToolTip.ShowOnDisabled" Value="True" />
+    </Style>
+    <Style Selector="Button"><Setter Property="Padding" Value="8,4" /></Style>
+    <!-- Fluent's default inline error adds rows below an input. Keep the existing
+         binding error indication beside the input; its Japanese overview is below. -->
+    <Style Selector="TextBox /template/ DataValidationErrors">
+      <Setter Property="Theme" Value="{DynamicResource TooltipDataValidationErrors}" />
+    </Style>
+    <Style Selector="TextBlock.label">
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.summary">
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+      <Setter Property="MaxLines" Value="2" />
+      <Setter Property="LineHeight" Value="20" />
+    </Style>
+    <Style Selector="Border.design-pane">
+      <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Padding" Value="6" />
+    </Style>
+    <Style Selector="Border.ok"><Setter Property="Background" Value="{DynamicResource AppCompletedSoftBrush}" /></Style>
+    <Style Selector="Border.invalid"><Setter Property="Background" Value="{DynamicResource TechnicalBackgroundBrush}" /></Style>
+    <Style Selector="ListBox.question-summaries">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="0" />
+    </Style>
+    <Style Selector="ListBox.question-summaries ListBoxItem">
+      <!-- Selection/focus changes color, never row geometry. Capacity uses this actual row height. -->
+      <Setter Property="Height" Value="48" />
+      <Setter Property="MinHeight" Value="44" />
+      <Setter Property="Margin" Value="0" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="BorderThickness" Value="3" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="VerticalContentAlignment" Value="Stretch" />
+    </Style>
+    <Style Selector="ListBox.question-summaries ListBoxItem:selected">
+      <Setter Property="Background" Value="{DynamicResource AppAccentSoftBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource AppAccentBrush}" />
+    </Style>
+    <Style Selector="TextBox:focus-visible, CheckBox:focus-visible, ComboBox:focus-visible, Button:focus-visible, ListBoxItem:focus-visible">
+      <Setter Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
+      <Setter Property="BorderThickness" Value="3" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid>
+    <!-- The shell supplies a finite slot. Only sub-minimum slots scroll; do not
+         measure star rows at infinity or hide overflow to claim that they fit. -->
+    <!-- NFR-UX-003: the design form and the allocation composition are movable panels. -->
+    <workspace:PanelWorkspace x:Name="DesignWorkspace" ScreenKey="Step.Design"
+                              AutomationProperties.AutomationId="Step.Design.Workspace"
+                              AutomationProperties.Name="採点設計画面のパネル">
+      <workspace:WorkspacePanel PanelId="Design.Form" Title="採点設計フォーム" MinContentWidth="560" MinContentHeight="120">
+          <ScrollViewer x:Name="QuantificationDesignScrollViewer"
+                        HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                        SizeChanged="HandleBodySizeChanged"
+                        AutomationProperties.AutomationId="QuantificationDesignScrollViewer"
+                        AutomationProperties.Name="採点設計の本文（狭い表示ではスクロール）">
+            <Grid x:Name="DesignBody" Margin="8" RowDefinitions="44,44,*,44" RowSpacing="8"
+                  KeyboardNavigation.TabNavigation="Local">
+              <Grid ColumnDefinitions="Auto,*,Auto,*,Auto,*" ColumnSpacing="8"
+                    TabIndex="0" KeyboardNavigation.TabNavigation="Local">
+                <TextBlock Text="基礎配点" Classes="label" />
+                <TextBox x:Name="BasePointsTextBox" Grid.Column="1" Text="{Binding BasePoints, Mode=TwoWay}" TabIndex="0"
+                         AutomationProperties.AutomationId="DesignBasePoints" AutomationProperties.Name="基礎配点 Base points"
+                         ToolTip.Tip="全提出へ共通で加算する基礎点です。0～100で入力し、固有配点と有効設問の配点との合計を正確に100にします。" />
+                <TextBlock Grid.Column="2" Text="固有配点" Classes="label" />
+                <TextBox x:Name="SpecialPointsTextBox" Grid.Column="3" Text="{Binding SpecialPoints, Mode=TwoWay}" TabIndex="1"
+                         AutomationProperties.AutomationId="DesignSpecialPoints" AutomationProperties.Name="固有評価の総配点 Special points"
+                         ToolTip.Tip="固有評価全体の配点を0～100で入力します。正の値には1件以上の有効な固有評価が必要です。詳細は固有評価の設定で編集します。" />
+                <TextBlock Grid.Column="4" Text="類似度減点係数" Classes="label" />
+                <TextBox x:Name="SimilarityPenaltyWeightTextBox" Grid.Column="5" Text="{Binding SimilarityPenaltyWeight, Mode=TwoWay}" TabIndex="2"
+                         AutomationProperties.AutomationId="DesignSimilarityPenaltyWeight" AutomationProperties.Name="類似度減点係数（0～1）"
+                         ToolTip.Tip="設問配点と類似度に掛ける係数を0～1で入力します。0なら類似度による減点はありません。" />
+              </Grid>
+
+              <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8"
+                    TabIndex="1" KeyboardNavigation.TabNavigation="Local">
+                <TextBox x:Name="AllocationSummaryText" IsReadOnly="True" TabIndex="0"
+                         AutomationProperties.AutomationId="DesignAllocationSummary" AutomationProperties.Name="全有効設問を含む配点の正確な合計と過不足・読取専用"
+                         ToolTip.Tip="現在の確定値による合計と残りです。表示ページや丸め桁数では省略せず、正確に100かを判定します。全文を選択・コピーできます。" />
+                <Button x:Name="EqualizeQuestionPointsButton" Grid.Column="1" Content="設問配点を均等化"
+                        Command="{Binding EqualizeQuestionPointsCommand}" TabIndex="1"
+                        AutomationProperties.AutomationId="EqualizeQuestionPoints" AutomationProperties.Name="残り配点を有効な設問へ均等配分"
+                        ToolTip.Tip="100から基礎配点と固有配点を引いた残りを、有効な全設問へ均等配分します。この明示操作でだけ手動配点を置き換えます。" />
+                <ContentControl Grid.Column="2" workspace:WorkspacePanel.IsHeaderSlot="True" />
+              </Grid>
+
+              <Grid Grid.Row="2" ColumnDefinitions="*,*" ColumnSpacing="12"
+                    TabIndex="2" KeyboardNavigation.TabNavigation="Local">
+                <Border Classes="design-pane" TabIndex="0" KeyboardNavigation.TabNavigation="Local">
+                  <Grid RowDefinitions="20,*,44" RowSpacing="4" KeyboardNavigation.TabNavigation="Local">
+                    <Grid ColumnDefinitions="Auto,*,64,96" ColumnSpacing="8">
+                      <PathIcon Data="{StaticResource WorkflowDesignIcon}" Width="18" Height="18" />
+                      <TextBlock Grid.Column="1" Text="設問" Classes="label" />
+                      <TextBlock Grid.Column="2" Text="状態" Classes="label" />
+                      <TextBlock Grid.Column="3" Text="配点" Classes="label" />
+                    </Grid>
+                    <ListBox x:Name="QuestionEditorList" Grid.Row="1" Classes="question-summaries"
+                             ItemsSource="{Binding VisibleQuestions}" SelectedItem="{Binding SelectedQuestion, Mode=TwoWay}"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                             SizeChanged="HandleQuestionListSizeChanged" TabIndex="0"
+                             AutomationProperties.AutomationId="DesignQuestions" AutomationProperties.Name="表示ページの設問・有効状態・配点"
+                             ToolTip.Tip="方向キーで設問を選択し、右の有効・配点欄で編集します。ページ移動は編集中の設問を変えません。長い設問名は「設問の詳細」から全文を確認できます。">
+                      <ListBox.ItemsPanel><ItemsPanelTemplate><VirtualizingStackPanel /></ItemsPanelTemplate></ListBox.ItemsPanel>
+                      <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="viewModels:QuestionDesignItemViewModel">
+                          <Border Padding="4,0" AutomationProperties.AutomationId="{Binding CardAutomationId}" AutomationProperties.Name="{Binding DisplayName}">
+                            <Grid ColumnDefinitions="*,64,96" ColumnSpacing="8">
+                              <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" MaxLines="1" VerticalAlignment="Center"
+                                         AutomationProperties.AutomationId="{Binding NameAutomationId}" AutomationProperties.Name="{Binding DisplayName}"
+                                         ToolTip.Tip="{Binding DisplayName}" />
+                              <Grid Grid.Column="1">
+                                <TextBlock Text="有効" IsVisible="{Binding Enabled}" VerticalAlignment="Center" />
+                                <TextBlock Text="無効" IsVisible="{Binding !Enabled}" VerticalAlignment="Center" />
+                              </Grid>
+                              <TextBlock Grid.Column="2" Text="{Binding Points, StringFormat='{}{0:G29}'}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                                         AutomationProperties.Name="{Binding Points, StringFormat='設問配点 {0:G29} 点'}"
+                                         ToolTip.Tip="{Binding Points, StringFormat='設問配点 {0:G29} 点（選択して右の配点欄で編集）'}" />
+                            </Grid>
+                          </Border>
+                        </DataTemplate>
+                      </ListBox.ItemTemplate>
+                    </ListBox>
+                    <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="4">
+                      <Button x:Name="PreviousQuestionPageButton" Content="前の設問" Command="{Binding PreviousPageCommand}" TabIndex="1"
+                              AutomationProperties.AutomationId="DesignQuestionsPreviousPage" AutomationProperties.Name="設問一覧の前のページ"
+                              ToolTip.Tip="前のページを表示します。編集中の設問と入力は保持します。" />
+                      <TextBlock x:Name="QuestionPageSummary" Grid.Column="1" Text="{Binding PageSummary}" VerticalAlignment="Center" TextAlignment="Center"
+                                 TextTrimming="CharacterEllipsis" AutomationProperties.AutomationId="DesignQuestionsPageSummary" AutomationProperties.Name="{Binding PageSummary}" />
+                      <Button x:Name="NextQuestionPageButton" Grid.Column="2" Content="次の設問" Command="{Binding NextPageCommand}" TabIndex="2"
+                              AutomationProperties.AutomationId="DesignQuestionsNextPage" AutomationProperties.Name="設問一覧の次のページ"
+                              ToolTip.Tip="次のページを表示します。編集中の設問と入力は保持します。" />
+                    </Grid>
+                  </Grid>
+                </Border>
+
+                <Border Grid.Column="1" Classes="design-pane" TabIndex="1" KeyboardNavigation.TabNavigation="Local">
+                  <!-- Keep these controls alive when pages change or T23 caches the view.
+                       No repeated numeric editors, child editors, or secondary draft. -->
+                  <Grid RowDefinitions="24,44,*,44" RowSpacing="4" TabIndex="1" KeyboardNavigation.TabNavigation="Local">
+                    <TextBlock x:Name="SelectedQuestionName" Text="{Binding SelectedQuestion.DisplayName, TargetNullValue='設問を選択してください', FallbackValue='設問を選択してください'}"
+                               Classes="label" TextTrimming="CharacterEllipsis" MaxLines="1"
+                               AutomationProperties.AutomationId="DesignSelectedQuestionName" AutomationProperties.Name="{Binding SelectedQuestion.DisplayName}"
+                               ToolTip.Tip="{Binding SelectedQuestion.DisplayName}" />
+                    <Grid Grid.Row="1" ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="8">
+                      <CheckBox x:Name="SelectedQuestionEnabled" Content="有効" IsChecked="{Binding SelectedQuestion.Enabled, Mode=TwoWay}"
+                                IsEnabled="{Binding SelectedQuestion, Converter={x:Static converters:ObjectConverters.IsNotNull}, FallbackValue=False}" TabIndex="0"
+                                AutomationProperties.AutomationId="{Binding SelectedQuestion.Id, StringFormat='DesignQuestion-{0}-Enabled', FallbackValue=DesignSelectedQuestionEnabled}"
+                                AutomationProperties.Name="選択した設問を有効にする"
+                                ToolTip.Tip="この設問を評価に含めるか設定します。変更しても他の設問の配点は自動変更しません。" />
+                      <TextBlock Grid.Column="1" Text="配点" Classes="label" />
+                      <TextBox x:Name="SelectedQuestionPointsTextBox" Grid.Column="2" Text="{Binding SelectedQuestion.Points, Mode=TwoWay}"
+                               IsEnabled="{Binding SelectedQuestion, Converter={x:Static converters:ObjectConverters.IsNotNull}, FallbackValue=False}" TabIndex="1"
+                               AutomationProperties.AutomationId="{Binding SelectedQuestion.WeightAutomationId, FallbackValue=DesignSelectedQuestionPoints}"
+                               AutomationProperties.Name="選択した設問の配点（絶対点）"
+                               ToolTip.Tip="選択した設問の絶対配点を0以上で入力します。全有効設問と基礎・固有配点の合計を正確に100にします。" />
+                      <Button x:Name="OpenQuestionSettingsButton" Grid.Column="3" Content="設問の詳細"
+                              CommandParameter="{x:Static viewModels:SettingsCategory.Mapping}" IsEnabled="False" TabIndex="2"
+                        AutomationProperties.AutomationId="DesignOpenQuestionSettings" AutomationProperties.Name="選択した設問の名前と本文の確認を入力詳細の設定で開く"
+                        ToolTip.Tip="同じ設問の名前・複製・並替えを入力詳細で編集し、本文は全文を確認できます。本文の編集は入力画面で行います。メインウィンドウで利用できます。" />
+                    </Grid>
+
+                    <Grid Grid.Row="2" RowDefinitions="*,*,44" RowSpacing="4">
+                      <TextBlock x:Name="EvaluatorSummaryText" Classes="summary" AutomationProperties.AutomationId="DesignEvaluatorSummary" />
+                      <TextBlock x:Name="SpecialSummaryText" Grid.Row="1" Classes="summary" AutomationProperties.AutomationId="DesignSpecialSummary" />
+                      <Border x:Name="FormulaGuide" Grid.Row="2" AutomationProperties.AutomationId="DesignFormulaGuide"
+                              AutomationProperties.Name="採点計算式と現在の確定値">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="4">
+                          <Grid RowDefinitions="20,20" ColumnDefinitions="*,*,*" ColumnSpacing="4">
+                            <TextBlock Grid.ColumnSpan="3" Text="B + Σ(Pq×Rq) + SpecialEarned − Σ(Pq×Lq×W)" TextTrimming="CharacterEllipsis"
+                                       AutomationProperties.AutomationId="DesignFormulaSummary"
+                                       AutomationProperties.Name="丸め・上下限適用前の計算式。Bは基礎点、Pqは設問配点、Rqは評価率、Lqは類似度、Wは減点係数。"
+                                       ToolTip.Tip="FinalRaw = Base + Σ(Pq × Rq) + SpecialEarned − Σ(Pq × Lq × W)。全文とblankの扱いは「計算式」で確認できます。" />
+                            <Grid Grid.Row="1" ColumnDefinitions="Auto,*" ColumnSpacing="4">
+                              <TextBlock Text="基礎" />
+                              <TextBlock x:Name="FormulaBaseValue" Grid.Column="1" Text="{Binding BasePoints, StringFormat='{}{0:G29}'}" TextTrimming="CharacterEllipsis"
+                                         AutomationProperties.AutomationId="FormulaBaseValue" AutomationProperties.Name="{Binding BasePoints, StringFormat='基礎点 {0:G29}'}" />
+                            </Grid>
+                            <Grid Grid.Row="1" Grid.Column="1" ColumnDefinitions="Auto,*" ColumnSpacing="4">
+                              <TextBlock Text="固有" />
+                              <TextBlock x:Name="FormulaSpecialValue" Grid.Column="1" Text="{Binding SpecialPoints, StringFormat='{}{0:G29}'}" TextTrimming="CharacterEllipsis"
+                                         AutomationProperties.AutomationId="FormulaSpecialValue" AutomationProperties.Name="{Binding SpecialPoints, StringFormat='固有配点 {0:G29}'}" />
+                            </Grid>
+                            <Grid Grid.Row="1" Grid.Column="2" ColumnDefinitions="Auto,*" ColumnSpacing="4">
+                              <TextBlock Text="係数" />
+                              <TextBlock x:Name="FormulaSimilarityValue" Grid.Column="1" Text="{Binding SimilarityPenaltyWeight, StringFormat='{}{0:G29}'}" TextTrimming="CharacterEllipsis"
+                                         AutomationProperties.AutomationId="FormulaSimilarityValue" AutomationProperties.Name="{Binding SimilarityPenaltyWeight, StringFormat='類似度減点係数 {0:G29}'}" />
+                            </Grid>
+                          </Grid>
+                          <Button x:Name="FormulaDetailsButton" Grid.Column="1" Content="計算式" TabIndex="3"
+                                  AutomationProperties.AutomationId="DesignFormulaDetails" AutomationProperties.Name="採点計算式と記号の説明を開く"
+                                  ToolTip.Tip="現在の確定値が使われる計算式を確認します。学生ごとの評価率・類似度・平均を仮の数値で計算しません。">
+                            <Button.Flyout>
+                              <Flyout>
+                                <Border x:Name="FormulaDetails" Width="560" Padding="8">
+                                  <StackPanel Spacing="8">
+                                    <TextBlock Text="採点計算式" FontWeight="SemiBold" />
+                                    <TextBlock Text="設問獲得点" ToolTip.Tip="設問の絶対配点 Pq と通常評価率 Rq（実行時）の積です。" />
+                                    <TextBlock Text="Pq × Rq（通常評価率は0～1）" />
+                                    <TextBlock Text="設問減点" ToolTip.Tip="設問の絶対配点 Pq、類似度 Lq（実行時）、係数 W の積です。" />
+                                    <TextBlock Text="Pq × Lq × W（類似度は0～1）" />
+                                    <TextBlock Text="FinalRaw = Base + Σ(Pq × Rq) + SpecialEarned − Σ(Pq × Lq × W)" TextWrapping="Wrap" />
+                                    <TextBlock Text="FinalScore = FinalRaw がblankならblank、それ以外は clamp(FinalRaw, 0, 100)" TextWrapping="Wrap" />
+                                    <TextBlock Text="固有獲得点は、設問内の有効な固有評価を等分平均し、固有評価がある有効設問間でも等分平均して固有配点を掛けます。" TextWrapping="Wrap" />
+                                    <TextBlock Text="必要な評価・参照回答・類似度の技術的失敗は0点ではなくblankへ伝播します。丸め桁数は計算の各段階に適用し、配点合計は丸めず正確に100かを判定します。丸めの変更は共通設定です。" TextWrapping="Wrap" />
+                                    <TextBlock Text="評価率・類似度・平均は実行時に計算されます。この画面では学生の仮点を計算しません。" TextWrapping="Wrap" />
+                                  </StackPanel>
+                                </Border>
+                              </Flyout>
+                            </Button.Flyout>
+                          </Button>
+                        </Grid>
+                      </Border>
+                    </Grid>
+
+                    <Grid Grid.Row="3" ColumnDefinitions="*,*,Auto" ColumnSpacing="4">
+                      <!-- The code-behind supplies the owning shell's existing command;
+                           parameters are enums, not labels. No selection is changed here. -->
+                      <Button x:Name="OpenEvaluatorSettingsButton" Content="通常評価" CommandParameter="{x:Static viewModels:SettingsCategory.Evaluation}"
+                              IsEnabled="False" TabIndex="4" HorizontalContentAlignment="Center"
+                              AutomationProperties.AutomationId="DesignOpenEvaluatorSettings" AutomationProperties.Name="選択した設問の通常評価設定を開く"
+                              ToolTip.Tip="同じ設問の評価方法・評価項目・Promptを設定で編集します。メインウィンドウで利用できます。AIは実行しません。" />
+                      <Button x:Name="OpenSpecialSettingsButton" Grid.Column="1" Content="固有評価" CommandParameter="{x:Static viewModels:SettingsCategory.Special}"
+                              IsEnabled="False" TabIndex="5" HorizontalContentAlignment="Center"
+                              AutomationProperties.AutomationId="DesignOpenSpecialSettings" AutomationProperties.Name="選択した設問の固有評価設定を開く"
+                              ToolTip.Tip="同じ設問の固有項目・対象列・Promptを設定で編集します。メインウィンドウで利用できます。AIは実行しません。" />
+                      <Button x:Name="OpenImportedPromptsButton" Grid.Column="2" Content="{Binding ImportedPrompts.Count, StringFormat='読込Prompt ({0})'}"
+                              CommandParameter="{x:Static viewModels:SettingsCategory.ImportedPrompts}" IsEnabled="False" TabIndex="6" HorizontalContentAlignment="Center"
+                              AutomationProperties.AutomationId="DesignOpenImportedPrompts" AutomationProperties.Name="同じ設問を対象に読込Promptの設定を開く"
+                              ToolTip.Tip="原文と適用先を設定で確認します。メインウィンドウで利用できます。開くだけではPromptを適用せず、AIも実行しません。" />
+                    </Grid>
+                  </Grid>
+                </Border>
+              </Grid>
+
+              <Border x:Name="DesignValidationSummary" Grid.Row="3" CornerRadius="8"
+                      AutomationProperties.AutomationId="DesignValidationSummary">
+                <Grid ColumnDefinitions="*,220,Auto,Auto,Auto" ColumnSpacing="4" TabIndex="3" KeyboardNavigation.TabNavigation="Local">
+                  <TextBlock x:Name="DesignStatusText" Margin="4,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                             AutomationProperties.AutomationId="DesignStatus" />
+                  <ComboBox x:Name="ValidationErrorSelector" Grid.Column="1" ItemsSource="{Binding ValidationErrors}"
+                            IsEnabled="{Binding HasTechnicalErrors, FallbackValue=False}" SelectionChanged="HandleValidationSelectionChanged"
+                            MaxDropDownHeight="220" HorizontalAlignment="Stretch" PlaceholderText="設定エラーはありません" TabIndex="0"
+                            AutomationProperties.AutomationId="DesignValidationErrors" AutomationProperties.Name="修正する設定エラーを選択"
+                            ToolTip.Tip="すべての設定エラーから方向キーで選びます。「全文」で正確な対象・項目・内容を確認し、「問題箇所へ」で修正先を開きます。">
+                    <ComboBox.ItemsPanel><ItemsPanelTemplate><VirtualizingStackPanel /></ItemsPanelTemplate></ComboBox.ItemsPanel>
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate x:DataType="viewModels:DesignValidationError">
+                        <TextBlock Text="{Binding AccessibleText}" MaxWidth="480" TextTrimming="CharacterEllipsis"
+                                   AutomationProperties.Name="{Binding AccessibleText}" ToolTip.Tip="{Binding AccessibleText}" />
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                  <Button x:Name="ErrorDetailsButton" Grid.Column="2" Content="全文" TabIndex="1"
+                          AutomationProperties.AutomationId="DesignValidationDetails" AutomationProperties.Name="選択したエラーの全文を確認"
+                          ToolTip.Tip="対象ID・項目・内容を省略せず読み、選択・コピーできます。複数の問題は左の一覧で切り替えます。">
+                    <Button.Flyout>
+                      <Flyout>
+                        <TextBox x:Name="ValidationErrorDetail" Width="560" Height="132" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                 AutomationProperties.AutomationId="DesignValidationErrorDetail" AutomationProperties.Name="設定エラーの全文・読取専用"
+                                 ToolTip.Tip="既存の検証エラーをそのまま表示します。長い内容はこの欄内でスクロールし、Ctrl+Endで末尾へ移動できます。" />
+                      </Flyout>
+                    </Button.Flyout>
+                  </Button>
+                  <Button x:Name="GoToProblemButton" Grid.Column="3" Content="問題箇所へ" Click="HandleGoToProblem" TabIndex="2"
+                          AutomationProperties.AutomationId="DesignGoToProblem" AutomationProperties.Name="選択した問題の入力欄または設定を開く"
+                        ToolTip.Tip="配点はこの画面へ、回答sheet・行範囲・設問文・主回答列は入力画面へ、それ以外は該当する設定へ移動します。" />
+                  <Button x:Name="ValidateDesignButton" Grid.Column="4" Content="再検証" Command="{Binding ValidateCommand}" TabIndex="3"
+                          AutomationProperties.AutomationId="ValidateDesignDraft" AutomationProperties.Name="現在の採点設計を再検証"
+                          ToolTip.Tip="現在の確定値を再検証します。数値へ変換できない入力は未反映のまま通知し、AIは実行しません。" />
+                </Grid>
+              </Border>
+            </Grid>
+          </ScrollViewer>
+      </workspace:WorkspacePanel>
+      <workspace:WorkspacePanel PanelId="Design.Allocation" Title="配点構成" MinContentWidth="200" MinContentHeight="88">
+        <Grid x:Name="DesignAllocationPanel" AutomationProperties.AutomationId="DesignAllocationPanel">
+          <!-- FR-067: the view model supplies AllocationVisualization (AllocationChartViewModel by default). -->
+          <ContentControl x:Name="DesignAllocationContent" Content="{Binding AllocationVisualization}"
+                          IsVisible="{Binding HasAllocationVisualization}"
+                          HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+                          AutomationProperties.AutomationId="DesignAllocationContent">
+            <ContentControl.DataTemplates>
+              <DataTemplate DataType="viz:AllocationChartViewModel">
+                <charts:AllocationChartView />
+              </DataTemplate>
+            </ContentControl.DataTemplates>
+          </ContentControl>
+          <ScrollViewer IsVisible="{Binding !HasAllocationVisualization}" HorizontalScrollBarVisibility="Disabled"
+                        VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="8" Spacing="4">
+              <TextBlock Text="配点構成の図はありません" FontWeight="SemiBold" TextWrapping="Wrap"
+                         AutomationProperties.AutomationId="DesignAllocationEmpty" />
+              <TextBlock Text="基礎配点・固有配点・設問配点の合計と過不足は、採点設計フォームの合計欄に数値で表示されます。"
+                         TextWrapping="Wrap" AutomationProperties.AutomationId="DesignAllocationEmptyReason" />
+            </StackPanel>
+          </ScrollViewer>
+        </Grid>
+      </workspace:WorkspacePanel>
+    </workspace:PanelWorkspace>
+  </Grid>
+</UserControl>

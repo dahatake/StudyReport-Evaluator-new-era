@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <AssemblyName>StudyReportEvaluator.App</AssemblyName>
+    <RootNamespace>StudyReportEvaluator.App</RootNamespace>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <CopilotSkipCliDownload Condition="'$(RuntimeIdentifier)' == ''">true</CopilotSkipCliDownload>
+    <CopilotSkipCliDownload Condition="'$(RuntimeIdentifier)' != ''">false</CopilotSkipCliDownload>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\StudyReportEvaluator.Core\StudyReportEvaluator.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+    <PackageReference Include="DocumentFormat.OpenXml" />
+    <PackageReference Include="GitHub.Copilot.SDK" />
+  </ItemGroup>
+  <Target
+      Name="WriteBundledCopilotManifest"
+      BeforeTargets="GetCopyToOutputDirectoryItems;ComputeFilesToPublish"
+      DependsOnTargets="_DownloadCopilotCli"
+      Condition="'$(CopilotSkipCliDownload)' != 'true' And '$(_CopilotRid)' != '' And Exists('$(_CopilotCliBinaryPath)')">
+    <GetFileHash Files="$(_CopilotCliBinaryPath)" Algorithm="SHA256">
+      <Output TaskParameter="Hash" PropertyName="_BundledCopilotCliSha256" />
+    </GetFileHash>
+    <PropertyGroup>
+      <_BundledCopilotManifestPath>$(IntermediateOutputPath)copilot-cli\$(CopilotCliVersion)\$(_CopilotPlatform)\copilot-runtime.json</_BundledCopilotManifestPath>
+      <_BundledCopilotRelativePath>runtimes/$(_CopilotRid)/native/$(_CopilotBinary)</_BundledCopilotRelativePath>
+      <_BundledCopilotManifestJson>{&quot;schemaVersion&quot;:1,&quot;runtimeIdentifier&quot;:&quot;$(_CopilotRid)&quot;,&quot;cliVersion&quot;:&quot;$(CopilotCliVersion)&quot;,&quot;cliSha256&quot;:&quot;$(_BundledCopilotCliSha256)&quot;,&quot;sdkVersion&quot;:&quot;$(GitHubCopilotSdkVersion)&quot;,&quot;cliRelativePath&quot;:&quot;$(_BundledCopilotRelativePath)&quot;}</_BundledCopilotManifestJson>
+    </PropertyGroup>
+    <WriteLinesToFile
+        File="$(_BundledCopilotManifestPath)"
+        Lines="$(_BundledCopilotManifestJson)"
+        Overwrite="true"
+        WriteOnlyWhenDifferent="true"
+        Encoding="UTF-8" />
+    <ItemGroup>
+      <ContentWithTargetPath
+          Include="$(_BundledCopilotManifestPath)"
+          TargetPath="copilot-runtime.json"
+          CopyToOutputDirectory="PreserveNewest"
+          CopyToPublishDirectory="PreserveNewest" />
+    </ItemGroup>
+  </Target>
+</Project>

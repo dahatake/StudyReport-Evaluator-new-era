@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "3.0",
+  "seed": 20260901,
+  "roundingDigits": 1,
+  "criterionOracles": [
+    {
+      "id": "A",
+      "raw": 25,
+      "minimum": 0,
+      "maximum": 30,
+      "weight": 2,
+      "expectedNormalized": 83.3
+    },
+    {
+      "id": "B",
+      "raw": 8,
+      "minimum": 1,
+      "maximum": 10,
+      "weight": 1,
+      "expectedNormalized": 77.8
+    }
+  ],
+  "expectedEvaluatorScore": 81.5,
+  "blankOracles": [
+    {
+      "case": "empty-primary-with-override",
+      "scorable": false,
+      "aiRaw": 7,
+      "override": 5,
+      "expectedEffectiveRaw": null,
+      "expectedNormalized": null
+    },
+    {
+      "case": "nonempty-primary-missing-values",
+      "scorable": true,
+      "aiRaw": null,
+      "override": null,
+      "expectedEffectiveRaw": null,
+      "expectedNormalized": null
+    },
+    {
+      "case": "valid-override-replaces-invalid-ai",
+      "scorable": true,
+      "aiRaw": 11,
+      "override": 5,
+      "minimum": 0,
+      "maximum": 10,
+      "expectedEffectiveRaw": 5,
+      "expectedNormalized": 50.0
+    },
+    {
+      "case": "invalid-override-does-not-fallback",
+      "scorable": true,
+      "aiRaw": 5,
+      "override": 11,
+      "minimum": 0,
+      "maximum": 10,
+      "expectedEffectiveRaw": null,
+      "expectedNormalized": null
+    }
+  ],
+  "midpointOracles": [
+    { "input": 81.45, "expected": 81.5 },
+    { "input": -81.45, "expected": -81.5 }
+  ]
+}
