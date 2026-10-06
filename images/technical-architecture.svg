@@ -1,0 +1,164 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 980" role="img" aria-labelledby="title desc">
+  <title id="title">StudyReport Evaluatorの技術アーキテクチャ</title>
+  <desc id="desc">StudyReportEvaluator.AppとStudyReportEvaluator.Coreのproject境界、Avalonia UI、workflow、Open XML workbook adapter、Copilot SDK adapter、設定、ローカルファイル、同梱CLI、GitHub Copilotサービスの依存関係を示す。</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#334155"/>
+    </marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.12"/>
+    </filter>
+    <style>
+      .title { font: 700 28px "Segoe UI", "Yu Gothic UI", sans-serif; fill: #0f172a; }
+      .subtitle { font: 400 14px "Segoe UI", "Yu Gothic UI", sans-serif; fill: #475569; }
+      .project { fill: #f8fafc; stroke: #475569; stroke-width: 2.2; stroke-dasharray: 9 6; }
+      .core-project { fill: #f5f3ff; stroke: #7c3aed; stroke-width: 2.2; }
+      .external { fill: #eff6ff; stroke: #3b82f6; stroke-width: 2.2; stroke-dasharray: 9 6; }
+      .label { font: 700 16px "Segoe UI", "Yu Gothic UI", sans-serif; fill: #1e293b; }
+      .card { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.8; filter: url(#shadow); }
+      .ui { fill: #eef2ff; stroke: #6366f1; stroke-width: 2; filter: url(#shadow); }
+      .workflow { fill: #ecfeff; stroke: #0891b2; stroke-width: 2; filter: url(#shadow); }
+      .workbook { fill: #ecfdf5; stroke: #16a34a; stroke-width: 2; filter: url(#shadow); }
+      .copilot { fill: #fff7ed; stroke: #ea580c; stroke-width: 2; filter: url(#shadow); }
+      .settings { fill: #fefce8; stroke: #ca8a04; stroke-width: 2; filter: url(#shadow); }
+      .core-card { fill: #ffffff; stroke: #8b5cf6; stroke-width: 1.8; }
+      .cloud { fill: #dbeafe; stroke: #2563eb; stroke-width: 2; filter: url(#shadow); }
+      .cli { fill: #f0fdf4; stroke: #22c55e; stroke-width: 2; filter: url(#shadow); }
+      .heading { font: 700 17px "Segoe UI", "Yu Gothic UI", sans-serif; fill: #0f172a; }
+      .body { font: 400 13px "Segoe UI", "Yu Gothic UI", sans-serif; fill: #334155; }
+      .mono { font: 600 12px Consolas, "Cascadia Mono", monospace; fill: #334155; }
+      .arrow { fill: none; stroke: #334155; stroke-width: 2; marker-end: url(#arrow); }
+      .dependency { fill: none; stroke: #7c3aed; stroke-width: 2.2; marker-end: url(#arrow); }
+      .io { fill: none; stroke: #16a34a; stroke-width: 2.2; marker-end: url(#arrow); }
+      .network { fill: none; stroke: #2563eb; stroke-width: 2.2; marker-end: url(#arrow); }
+      .dashed { fill: none; stroke: #64748b; stroke-width: 1.7; stroke-dasharray: 6 5; marker-end: url(#arrow); }
+      .arrow-label { font: 600 12px "Segoe UI", "Yu Gothic UI", sans-serif; fill: #334155; }
+      .footer { font: 400 11.5px "Segoe UI", "Yu Gothic UI", sans-serif; fill: #64748b; }
+    </style>
+  </defs>
+
+  <rect width="1440" height="980" fill="#ffffff"/>
+  <text x="34" y="42" class="title">技術アーキテクチャ：UI・採点契約・Excel・Copilotの境界</text>
+  <text x="34" y="69" class="subtitle">矢印は主な依存またはデータ移動。CoreからAppへの逆参照はありません。</text>
+
+  <rect x="25" y="95" width="960" height="805" rx="22" class="project"/>
+  <text x="48" y="127" class="label">StudyReportEvaluator.App（Avalonia / Open XML / Copilot adapter）</text>
+
+  <rect x="55" y="150" width="205" height="110" rx="14" class="card"/>
+  <text x="157" y="180" text-anchor="middle" class="heading">起動・composition</text>
+  <text x="157" y="205" text-anchor="middle" class="mono">Program / App</text>
+  <text x="157" y="227" text-anchor="middle" class="mono">ServiceRegistration</text>
+  <text x="157" y="248" text-anchor="middle" class="body">desktop lifetime・VM生成</text>
+
+  <rect x="300" y="150" width="250" height="110" rx="14" class="ui"/>
+  <text x="425" y="180" text-anchor="middle" class="heading">Avalonia Views</text>
+  <text x="425" y="205" text-anchor="middle" class="mono">*.axaml / *.axaml.cs</text>
+  <text x="425" y="228" text-anchor="middle" class="body">4工程＋設定5カテゴリ</text>
+  <text x="425" y="248" text-anchor="middle" class="body">compiled binding</text>
+
+  <rect x="590" y="150" width="345" height="110" rx="14" class="ui"/>
+  <text x="762" y="180" text-anchor="middle" class="heading">ViewModels / navigation</text>
+  <text x="762" y="205" text-anchor="middle" class="mono">MainWindowViewModel</text>
+  <text x="762" y="226" text-anchor="middle" class="mono">Input / Design / Execution / Results</text>
+  <text x="762" y="248" text-anchor="middle" class="body">次回draftと実行中snapshotを分離</text>
+
+  <rect x="55" y="315" width="275" height="175" rx="15" class="workflow"/>
+  <text x="192" y="347" text-anchor="middle" class="heading">Workflow</text>
+  <text x="192" y="372" text-anchor="middle" class="mono">QuantificationRunBoundary</text>
+  <text x="192" y="394" text-anchor="middle" class="mono">DurableQuantificationOrchestrator</text>
+  <text x="192" y="416" text-anchor="middle" class="mono">DurableEvaluationScheduler</text>
+  <text x="192" y="445" text-anchor="middle" class="body">preflight → reference → row</text>
+  <text x="192" y="466" text-anchor="middle" class="body">checkpoint → finalization</text>
+
+  <rect x="360" y="315" width="275" height="175" rx="15" class="workbook"/>
+  <text x="497" y="347" text-anchor="middle" class="heading">Workbook adapter</text>
+  <text x="497" y="372" text-anchor="middle" class="mono">WorkbookMetadataReader</text>
+  <text x="497" y="394" text-anchor="middle" class="mono">ColumnMappingValidator</text>
+  <text x="497" y="416" text-anchor="middle" class="mono">CheckpointStore / Writers</text>
+  <text x="497" y="445" text-anchor="middle" class="body">DocumentFormat.OpenXml</text>
+  <text x="497" y="466" text-anchor="middle" class="body">read-only intake・別workbook出力</text>
+
+  <rect x="665" y="315" width="270" height="175" rx="15" class="copilot"/>
+  <text x="800" y="347" text-anchor="middle" class="heading">Copilot adapter</text>
+  <text x="800" y="372" text-anchor="middle" class="mono">CopilotClientFactory</text>
+  <text x="800" y="394" text-anchor="middle" class="mono">Ephemeral*Runner</text>
+  <text x="800" y="416" text-anchor="middle" class="mono">SchemaFactory / Submit*Tool</text>
+  <text x="800" y="445" text-anchor="middle" class="body">GitHub.Copilot.SDK</text>
+  <text x="800" y="466" text-anchor="middle" class="body">stdio・一時session・closed tool</text>
+
+  <rect x="55" y="525" width="275" height="105" rx="15" class="settings"/>
+  <text x="192" y="557" text-anchor="middle" class="heading">Local settings</text>
+  <text x="192" y="582" text-anchor="middle" class="mono">ApplicationSettings</text>
+  <text x="192" y="604" text-anchor="middle" class="mono">SettingsFileStore</text>
+  <text x="192" y="622" text-anchor="middle" class="body">strict UTF-8 JSON / schema 1</text>
+
+  <rect x="45" y="665" width="900" height="205" rx="18" class="core-project"/>
+  <text x="68" y="697" class="label">StudyReportEvaluator.Core（BCLのみ）</text>
+  <rect x="75" y="720" width="250" height="115" rx="13" class="core-card"/>
+  <text x="200" y="751" text-anchor="middle" class="heading">Domain / validation</text>
+  <text x="200" y="776" text-anchor="middle" class="mono">QuantificationDefinition</text>
+  <text x="200" y="798" text-anchor="middle" class="mono">*DefinitionValidator</text>
+  <text x="200" y="820" text-anchor="middle" class="body">immutable record・closed invariants</text>
+
+  <rect x="370" y="720" width="250" height="115" rx="13" class="core-card"/>
+  <text x="495" y="751" text-anchor="middle" class="heading">Prompting</text>
+  <text x="495" y="776" text-anchor="middle" class="mono">BuiltInPromptTemplates</text>
+  <text x="495" y="798" text-anchor="middle" class="mono">SafeEvaluationPayloadBuilder</text>
+  <text x="495" y="820" text-anchor="middle" class="body">選択済み同一行からpayload生成</text>
+
+  <rect x="665" y="720" width="250" height="115" rx="13" class="core-card"/>
+  <text x="790" y="751" text-anchor="middle" class="heading">Scoring / formulas</text>
+  <text x="790" y="776" text-anchor="middle" class="mono">WeightedScoreCalculator</text>
+  <text x="790" y="798" text-anchor="middle" class="mono">FormulaExpression / Serializer</text>
+  <text x="790" y="820" text-anchor="middle" class="body">previewとExcel数式の共通契約</text>
+
+  <rect x="1015" y="95" width="400" height="805" rx="22" class="external"/>
+  <text x="1038" y="127" class="label">process外・永続化先</text>
+
+  <rect x="1050" y="160" width="330" height="175" rx="16" class="card"/>
+  <text x="1215" y="191" text-anchor="middle" class="heading">Local files</text>
+  <text x="1080" y="223" class="mono">input.xlsx</text>
+  <text x="1295" y="223" text-anchor="end" class="body">read-only</text>
+  <text x="1080" y="250" class="mono">*.partial.xlsx</text>
+  <text x="1295" y="250" text-anchor="end" class="body">checkpoint</text>
+  <text x="1080" y="277" class="mono">final.xlsx</text>
+  <text x="1295" y="277" text-anchor="end" class="body">4 app-owned sheets</text>
+  <text x="1080" y="304" class="mono">setting.txt</text>
+  <text x="1295" y="304" text-anchor="end" class="body">user setting</text>
+
+  <rect x="1050" y="400" width="330" height="140" rx="16" class="cli"/>
+  <text x="1215" y="432" text-anchor="middle" class="heading">検証済み同梱Copilot CLI</text>
+  <text x="1215" y="459" text-anchor="middle" class="mono">copilot-runtime.json</text>
+  <text x="1215" y="482" text-anchor="middle" class="mono">runtimes/win-x64/native/copilot.exe</text>
+  <text x="1215" y="513" text-anchor="middle" class="body">SDK child process / stdio JSON-RPC</text>
+
+  <rect x="1050" y="615" width="330" height="130" rx="22" class="cloud"/>
+  <text x="1215" y="655" text-anchor="middle" class="heading">GitHub Copilot</text>
+  <text x="1215" y="683" text-anchor="middle" class="body">認証・model一覧・AI応答</text>
+  <text x="1215" y="711" text-anchor="middle" class="body">network境界</text>
+
+  <path d="M260 205H300" class="arrow"/>
+  <path d="M550 205H590" class="arrow"/>
+  <path d="M762 260V292H192V315" class="arrow"/>
+  <path d="M762 260V292H497V315" class="arrow"/>
+  <path d="M762 260V292H800V315" class="arrow"/>
+  <path d="M330 402H360" class="arrow"/>
+  <path d="M330 447C485 530 650 530 665 447" class="arrow"/>
+  <path d="M192 490V665" class="dependency"/>
+  <text x="205" y="651" class="arrow-label">domain contractを利用</text>
+  <path d="M497 490V645H495V720" class="dependency"/>
+  <path d="M800 490V645H790V720" class="dependency"/>
+  <path d="M330 575H1015" class="dashed"/>
+  <text x="600" y="564" class="arrow-label">明示save / load</text>
+  <path d="M635 402H665" class="arrow"/>
+  <path d="M635 445C810 580 970 310 1050 250" class="io"/>
+  <text x="783" y="557" class="arrow-label">partial / final</text>
+  <path d="M330 575C610 610 890 210 1050 205" class="io"/>
+  <path d="M935 402H1010V470H1050" class="arrow"/>
+  <text x="957" y="390" class="arrow-label">SDK</text>
+  <path d="M1215 540V615" class="network"/>
+  <text x="1228" y="583" class="arrow-label">network</text>
+
+  <text x="35" y="936" class="footer">実装根拠: Program.cs / App.axaml.cs / Composition/ServiceRegistration.cs / ViewModels/ExecutionViewModel.cs / Workflow/DurableQuantificationOrchestrator.cs</text>
+  <text x="35" y="956" class="footer">Workbooks/Checkpoint/CheckpointStore.cs / Workflow/DurableRunFinalizer.cs / Copilot/CopilotClientFactory.cs / Core project各domain・validation・prompting・scoring source</text>
+</svg>

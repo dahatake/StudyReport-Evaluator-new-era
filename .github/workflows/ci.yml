@@ -1,0 +1,166 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: "true"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1"
+  STUDY_REPORT_EVALUATOR_COPILOT_LIVE_SMOKE: "0"
+  STUDY_REPORT_EVALUATOR_EXTERNAL_RECALC_SMOKE: "0"
+  STUDY_REPORT_EVALUATOR_REALDATA_SYSTEM_SMOKE: "0"
+
+jobs:
+  validate:
+    name: Windows development-host deterministic and package validation
+    runs-on: windows-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.400
+          cache: true
+          cache-dependency-path: |
+            **/packages.lock.json
+            src/StudyReportEvaluator.App/packages.win-x64-singlefile.lock.json
+
+      - name: Verify PowerShell and privacy boundary
+        shell: pwsh
+        run: |
+          if ($PSVersionTable.PSEdition -cne 'Core' -or $PSVersionTable.PSVersion.Major -lt 7) {
+              throw 'PowerShell Core 7 or later is required.'
+          }
+
+          $trackedSamples = @(git ls-files -- sample)
+          if ($LASTEXITCODE -ne 0 -or $trackedSamples.Count -ne 0) {
+              throw 'The private local sample directory must remain untracked.'
+          }
+
+      - name: Restore locked dependencies
+        shell: pwsh
+        run: dotnet restore .\StudyReportEvaluator.slnx --locked-mode
+
+      - name: Verify product version
+        shell: pwsh
+        run: pwsh.exe -NoLogo -NoProfile -File .\dev\version.ps1 verify
+
+      - name: Run product version tool self-tests
+        shell: pwsh
+        run: pwsh.exe -NoLogo -NoProfile -File .\dev\version.tests.ps1
+
+      # FR-064: one gate for build (warnings as errors), deterministic tests and management-data consistency.
+      # The packaging tests excluded here are exercised by the package steps below.
+      - name: Verify repository (build, tests, management data)
+        id: deterministic-tests
+        shell: pwsh
+        run: >-
+          .\scripts\verify.ps1
+          -TestFilter "FullyQualifiedName!~StudyReportEvaluator.App.Tests.Packaging.WindowsPublishPackageTests&FullyQualifiedName!~StudyReportEvaluator.App.Tests.Packaging.WindowsSingleFilePackageTests"
+          -ResultsDirectory .\TestResults\ci
+
+      - name: Build and validate Windows ZIP regression
+        id: windows-zip
+        shell: pwsh
+        run: >-
+          .\scripts\test-windows-zip.ps1
+          -ResultsDirectory .\TestResults\ci\windows-zip
+
+      - name: Build and validate Windows development-host single-file package
+        id: windows-singlefile
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          # The .NET SDK on Windows supplies WindowsDesktop for the P06 UIA observer, not the EXE.
+          $runtimes = @(dotnet --list-runtimes)
+          if ($LASTEXITCODE -ne 0) {
+              throw 'Unable to inspect installed .NET runtimes for the UIA observer.'
+          }
+          if (@($runtimes -cmatch '^Microsoft\.WindowsDesktop\.App 10\.0\.[0-9]+ \[').Count -eq 0) {
+              throw 'The P06 UIA observer requires Microsoft.WindowsDesktop.App 10.0.x from the Windows .NET SDK.'
+          }
+
+          # Hosted CI is not clean-OS evidence and does not guarantee an interactive desktop.
+          # Unavailable UIA must fail P06, not silently skip it.
+          # P02/P05 throw on failure; P07 explicitly sets its exit code.
+          & .\scripts\publish-windows.ps1 -SingleFile
+          & .\scripts\package-windows-singlefile.ps1
+          & .\scripts\test-windows-singlefile.ps1 -ResultsDirectory .\TestResults\ci\windows-singlefile
+          if ($LASTEXITCODE -ne 0) {
+              throw 'P07 Windows single-file required validation failed.'
+          }
+
+      - name: Check repository integrity
+        shell: pwsh
+        run: |
+          git diff --check
+          if ($LASTEXITCODE -ne 0) {
+              throw 'git diff --check failed.'
+          }
+
+          $zeroByteFiles = @(Get-ChildItem -Path src,tests -Recurse -File -Include *.cs,*.csproj,*.props,*.targets,*.md |
+              Where-Object {
+                  $_.FullName -notmatch '[\\/](bin|obj)[\\/]' -and $_.Length -eq 0
+              })
+          if ($zeroByteFiles.Count -ne 0) {
+              $zeroByteFiles | ForEach-Object { Write-Error $_.FullName }
+              throw 'Zero-byte source files are not allowed.'
+          }
+
+      - name: Upload test results
+        if: ${{ always() && steps.deterministic-tests.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-${{ github.run_id }}
+          # Keep P07 raw TRX local; only its closed evidence is uploaded below.
+          path: |
+            TestResults/ci/**/*.trx
+            !TestResults/ci/windows-singlefile/**
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload Windows ZIP regression evidence
+        if: ${{ steps.windows-zip.outcome == 'success' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-zip-regression-${{ github.run_id }}
+          path: |
+            artifacts/package/StudyReportEvaluator-win-x64.zip
+            artifacts/package/StudyReportEvaluator-win-x64.zip.sha256
+            artifacts/package/StudyReportEvaluator-win-x64.evidence.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+      - name: Upload Windows development-host single-file evidence
+        if: ${{ steps.windows-singlefile.outcome == 'success' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-singlefile-development-host-${{ github.run_id }}
+          path: |
+            artifacts/package/StudyReportEvaluator-win-x64.exe
+            artifacts/package/StudyReportEvaluator-win-x64.exe.sha256
+            artifacts/package/StudyReportEvaluator-win-x64.exe.evidence.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14

@@ -1,0 +1,264 @@
+<UserControl
+    x:Class="StudyReportEvaluator.App.Views.InputView"
+    x:DataType="viewModels:InputViewModel"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="using:Avalonia.Data.Converters"
+    xmlns:viewModels="using:StudyReportEvaluator.App.ViewModels"
+    xmlns:views="using:StudyReportEvaluator.App.Views"
+    Background="{DynamicResource AppCanvasBrush}"
+    Foreground="{DynamicResource AppTextBrush}"
+    Margin="0"
+    FontSize="14"
+    KeyboardNavigation.TabNavigation="Local"
+    AutomationProperties.AutomationId="InputView"
+    AutomationProperties.Name="Excel と回答範囲・設問の入力">
+
+  <UserControl.Styles>
+    <Style Selector="Button, ComboBox, CheckBox, TextBox, ListBox">
+      <Setter Property="MinHeight" Value="44" />
+      <Setter Property="MinWidth" Value="44" />
+      <Setter Property="FontSize" Value="14" />
+      <Setter Property="ToolTip.ShowOnDisabled" Value="True" />
+    </Style>
+    <Style Selector="ComboBoxItem, ListBoxItem">
+      <Setter Property="MinHeight" Value="44" />
+      <Setter Property="FontSize" Value="14" />
+    </Style>
+    <Style Selector="TextBlock">
+      <Setter Property="FontSize" Value="14" />
+    </Style>
+    <Style Selector="TextBlock.label">
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TextBlock.muted">
+      <Setter Property="Foreground" Value="{DynamicResource AppMutedTextBrush}" />
+    </Style>
+    <Style Selector="Button.primary">
+      <Setter Property="Background" Value="{DynamicResource AppAccentBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource AppOnAccentBrush}" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="ListBox#InputQuestionList">
+      <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="0" />
+    </Style>
+    <!-- The complete item, including its focus decoration, occupies one 44 DIP row. -->
+    <Style Selector="ListBox#InputQuestionList > ListBoxItem">
+      <Setter Property="Height" Value="44" />
+      <Setter Property="Padding" Value="8,0" />
+      <Setter Property="Margin" Value="0" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBox:focus-visible, ComboBox:focus-visible, CheckBox:focus-visible, ListBoxItem:focus-visible">
+      <Setter Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
+      <Setter Property="BorderThickness" Value="3" />
+    </Style>
+  </UserControl.Styles>
+
+  <!-- The parent supplies a finite body. Only text and popup/list contents scroll locally. -->
+  <Grid x:Name="InputContentRoot" Margin="8" RowDefinitions="Auto,Auto,*,Auto" RowSpacing="6"
+        SizeChanged="HandleInputContentSizeChanged" KeyboardNavigation.TabNavigation="Continue">
+    <StackPanel Spacing="2">
+      <Grid RowDefinitions="Auto,44" RowSpacing="4" ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
+        <Grid Grid.ColumnSpan="4" ColumnDefinitions="Auto,*" ColumnSpacing="12">
+          <TextBlock Text="ファイル path（標準 .xlsx）" Classes="label" VerticalAlignment="Center" />
+          <TextBlock x:Name="InputLoadStatus" Grid.Column="1" Text="{Binding StatusText}"
+                     Classes="muted" TextWrapping="Wrap" ToolTip.Tip="{Binding WorkbookSummary}"
+                     AutomationProperties.AutomationId="InputLoadStatus" />
+        </Grid>
+        <TextBox x:Name="FilePathTextBox" Grid.Row="1" Text="{Binding FilePath, Mode=TwoWay}"
+                 AcceptsReturn="False" TextWrapping="NoWrap" PlaceholderText="C:\...\responses.xlsx"
+                 TabIndex="0" AutomationProperties.AutomationId="InputFilePath"
+                 AutomationProperties.Name="入力する標準 xlsx ファイル path" />
+        <Button x:Name="PickFileButton" Grid.Row="1" Grid.Column="1" Content="ファイルを選択"
+                Click="HandlePickFileClick" TabIndex="1" AutomationProperties.AutomationId="PickInputWorkbook"
+                AutomationProperties.Name="native picker で標準 xlsx ファイルを選択" />
+        <Button x:Name="LoadFileButton" Grid.Row="1" Grid.Column="2" Content="read-only で読込"
+                Classes="primary" Command="{Binding LoadFileCommand}" TabIndex="2"
+                AutomationProperties.AutomationId="LoadInputWorkbook"
+                AutomationProperties.Name="入力 Excel を read-only で読み込む" />
+        <Button x:Name="PreparationToggleButton" Grid.Row="1" Grid.Column="3" Content="実行の準備を開く"
+                IsVisible="False" Click="HandlePreparationToggleClick" TabIndex="19"
+                AutomationProperties.AutomationId="InputTogglePreparation"
+                AutomationProperties.Name="Copilot ログインと再開の準備を開く／入力へ戻る"
+                ToolTip.Tip="Copilot ログイン、checkpoint からの再開、実行前の技術的な問題を、この入力画面の中で開閉します。入力値は保持されます。" />
+      </Grid>
+      <TextBlock x:Name="PickerStatusMessage" Text="" IsVisible="False" TextWrapping="Wrap"
+                 Foreground="{DynamicResource TechnicalTextBrush}"
+                 AutomationProperties.AutomationId="InputPickerStatus" />
+    </StackPanel>
+
+    <!-- Start narrow; the size handler switches only when the actual width crosses 840 DIP. -->
+    <Border x:Name="InputRangeCard" Grid.Row="1">
+      <Grid x:Name="InputRangeFields" RowDefinitions="Auto,Auto" ColumnDefinitions="*,*,*,*" RowSpacing="6" ColumnSpacing="8">
+        <StackPanel x:Name="WorksheetField" Grid.ColumnSpan="2" Spacing="4">
+          <TextBlock Text="回答 sheet" Classes="label" />
+          <ComboBox x:Name="WorksheetComboBox" ItemsSource="{Binding Worksheets}"
+                    SelectedItem="{Binding SelectedWorksheetChoice, Mode=TwoWay, Converter={StaticResource InputSelectionWriteback}}"
+                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" MaxDropDownHeight="264"
+                    ToolTip.Tip="{Binding SelectedWorksheetChoice.DisplayText}" TabIndex="3"
+                    AutomationProperties.AutomationId="InputWorksheet" AutomationProperties.Name="回答 sheet">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="viewModels:WorksheetChoiceViewModel">
+                <TextBlock Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding DisplayText}" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+        </StackPanel>
+        <StackPanel x:Name="HeaderRowField" Grid.Column="2" Spacing="4">
+          <TextBlock Text="質問文の行" Classes="label" />
+          <ComboBox x:Name="HeaderRowComboBox" ItemsSource="{Binding HeaderRowOptions}"
+                    SelectedItem="{Binding HeaderRow, Mode=TwoWay, Converter={StaticResource InputSelectionWriteback}}" HorizontalAlignment="Stretch"
+                    TabIndex="4" AutomationProperties.AutomationId="InputHeaderRow"
+                    AutomationProperties.Name="質問文の行 1 または 2"
+                    ToolTip.Tip="1 または 2 を選び、変更後は見出し行を再読込してください。" />
+        </StackPanel>
+        <StackPanel x:Name="FirstDataRowField" Grid.Row="1" Grid.ColumnSpan="2" Spacing="4">
+          <TextBlock Text="回答開始行" Classes="label" />
+          <TextBox x:Name="FirstDataRowTextBox" Text="{Binding FirstDataRow, Mode=TwoWay}" TabIndex="5"
+                   AutomationProperties.AutomationId="InputFirstDataRow" AutomationProperties.Name="回答開始行番号" />
+        </StackPanel>
+        <StackPanel x:Name="LastDataRowField" Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2" Spacing="4">
+          <TextBlock Text="回答終了行" Classes="label" />
+          <TextBox x:Name="LastDataRowTextBox" Text="{Binding LastDataRow, Mode=TwoWay}" TabIndex="6"
+                   AutomationProperties.AutomationId="InputLastDataRow" AutomationProperties.Name="回答終了行番号" />
+        </StackPanel>
+        <Button x:Name="RefreshHeaderButton" Grid.Column="3" Content="見出し行を再読込" Command="{Binding RefreshHeaderCommand}"
+                VerticalAlignment="Bottom" TabIndex="7" AutomationProperties.AutomationId="RefreshInputHeader"
+                AutomationProperties.Name="指定した見出し行で workbook metadata を再読込" />
+      </Grid>
+    </Border>
+
+    <Grid x:Name="InputMappingHost" Grid.Row="2" ColumnDefinitions="2*,3*" ColumnSpacing="8">
+      <Grid x:Name="QuestionListPane" RowDefinitions="Auto,*,Auto" RowSpacing="4">
+        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
+          <TextBlock Text="設問" Classes="label" VerticalAlignment="Center" />
+          <ComboBox x:Name="QuestionSelector" Grid.Column="1" ItemsSource="{Binding Questions}"
+                    SelectedItem="{Binding SelectedQuestion, Mode=TwoWay, Converter={StaticResource InputSelectionWriteback}}" MaxDropDownHeight="264"
+                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" PlaceholderText="全設問へ移動"
+                    TabIndex="8" AutomationProperties.AutomationId="InputQuestionSelector"
+                    AutomationProperties.Name="全設問から編集対象へ直接移動"
+                    ToolTip.Tip="選んだ設問を含むページへ移動します。詳細設定でも同じ設問を編集します。">
+            <ComboBox.ItemsPanel>
+              <ItemsPanelTemplate><VirtualizingStackPanel /></ItemsPanelTemplate>
+            </ComboBox.ItemsPanel>
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="viewModels:InputQuestionMappingViewModel">
+                <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding DisplayName}" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+        </Grid>
+        <Grid x:Name="QuestionPageViewport" Grid.Row="1" SizeChanged="HandleQuestionViewportSizeChanged">
+          <ListBox x:Name="InputQuestionList" ItemsSource="{Binding VisibleQuestions}"
+                   SelectedItem="{Binding SelectedQuestion, Mode=TwoWay, Converter={StaticResource InputSelectionWriteback}}" SelectionMode="Single"
+                   ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                   TabIndex="9" AutomationProperties.AutomationId="InputQuestionMappings"
+                   AutomationProperties.Name="このページの設問一覧">
+            <ListBox.ItemsPanel>
+              <ItemsPanelTemplate><VirtualizingStackPanel /></ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="viewModels:InputQuestionMappingViewModel">
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8"
+                      AutomationProperties.AutomationId="{Binding Id, StringFormat='InputQuestion-{0}-Row'}"
+                      AutomationProperties.Name="{Binding DisplayName}">
+                  <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding DisplayName}" />
+                  <TextBlock Grid.Column="1" Text="有効" IsVisible="{Binding Enabled}" />
+                  <TextBlock Grid.Column="1" Text="無効" IsVisible="{Binding !Enabled}" Classes="muted" />
+                  <TextBlock Grid.Column="2" Text="{Binding PrimarySourceColumn}" FontWeight="SemiBold" />
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </Grid>
+        <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="4">
+          <Button x:Name="PreviousPageButton" Content="←" Command="{Binding PreviousPageCommand}"
+                  TabIndex="10" AutomationProperties.AutomationId="InputPreviousPage" AutomationProperties.Name="前の設問ページ" />
+          <TextBlock x:Name="QuestionPageSummary" Grid.Column="1" Text="{Binding PageSummary}" TextWrapping="Wrap"
+                     TextAlignment="Center" VerticalAlignment="Center" AutomationProperties.AutomationId="InputPageSummary" />
+          <Button x:Name="NextPageButton" Grid.Column="2" Content="→" Command="{Binding NextPageCommand}"
+                  TabIndex="11" AutomationProperties.AutomationId="InputNextPage" AutomationProperties.Name="次の設問ページ" />
+        </Grid>
+      </Grid>
+
+      <!-- One stable editor instance: browsing a page does not discard the logical editing target. -->
+      <Grid x:Name="SelectedQuestionEditor" Grid.Column="1"
+            DataContext="{Binding SelectedQuestion, DataType={x:Type viewModels:InputViewModel}}"
+            x:DataType="viewModels:InputQuestionMappingViewModel" RowDefinitions="Auto,Auto,*,Auto" RowSpacing="4">
+        <Grid RowDefinitions="Auto,44" RowSpacing="4" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+          <TextBlock Grid.Column="1" Text="主回答列" Classes="label" />
+          <CheckBox x:Name="QuestionEnabledCheckBox" Grid.Row="1" Content="有効" IsChecked="{Binding Enabled, Mode=TwoWay}"
+                    IsEnabled="{Binding ., Converter={x:Static converters:ObjectConverters.IsNotNull}, FallbackValue=False}"
+                    TabIndex="12" AutomationProperties.AutomationId="{Binding Id, StringFormat='InputQuestion-{0}-Enabled', FallbackValue=InputQuestionEnabled}"
+                    AutomationProperties.Name="この質問 mapping を有効化または無効化" />
+          <ComboBox x:Name="PrimaryColumnComboBox" Grid.Row="1" Grid.Column="1" ItemsSource="{Binding AvailableColumnNames}"
+                    SelectedItem="{Binding PrimarySourceColumn, Mode=TwoWay, Converter={StaticResource InputSelectionWriteback}}" HorizontalAlignment="Stretch" MaxDropDownHeight="264"
+                    IsEnabled="{Binding ., Converter={x:Static converters:ObjectConverters.IsNotNull}, FallbackValue=False}"
+                    TabIndex="13" AutomationProperties.AutomationId="{Binding PrimaryAutomationId, FallbackValue=InputQuestionPrimary}"
+                    AutomationProperties.Name="この質問の主回答列"
+                    ToolTip.Tip="主回答列を変更すると、読込済みの質問行の見出しが設問文に反映されます。" />
+          <Button x:Name="MappingDetailsButton" Grid.Row="1" Grid.Column="2" Content="入力詳細…" Click="HandleMappingDetailsClick"
+                  TabIndex="14" AutomationProperties.AutomationId="{Binding Id, StringFormat='InputQuestion-{0}-Details', FallbackValue=InputMappingDetails}"
+                  AutomationProperties.Name="選択した設問の入力詳細を設定で開く"
+                  ToolTip.Tip="設問名・補助列・列候補・追加・複製・並替え・削除は入力詳細で編集します。" />
+        </Grid>
+        <Grid Grid.Row="1" ColumnDefinitions="Auto,*" ColumnSpacing="8">
+          <TextBlock Text="設問文（必須）" Classes="label" />
+          <TextBlock x:Name="SelectedQuestionName" Grid.Column="1" Text="{Binding DisplayName}" Classes="muted"
+                     TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding DisplayName}"
+                     AutomationProperties.AutomationId="InputSelectedQuestionName" />
+        </Grid>
+        <TextBox x:Name="QuestionTextEditor" Grid.Row="2" Text="{Binding QuestionText, Mode=TwoWay}"
+                 AcceptsReturn="True" AcceptsTab="False" TextWrapping="Wrap" VerticalAlignment="Stretch"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                 IsEnabled="{Binding ., Converter={x:Static converters:ObjectConverters.IsNotNull}, FallbackValue=False}"
+                 PlaceholderText="設問を選択し、評価する設問文の全文を入力してください。"
+                 TabIndex="15" AutomationProperties.AutomationId="{Binding Id, StringFormat='InputQuestion-{0}-Text', FallbackValue=InputQuestionText}"
+                 AutomationProperties.Name="評価する設問 text"
+                 ToolTip.Tip="長い設問文も全文を手動編集できます。Ctrl+Endで末尾へ移動し、Tabで次の操作へ進めます。" />
+        <TextBlock x:Name="QuestionTextRequiredError" Grid.Row="3" Text="" IsVisible="False" TextWrapping="Wrap"
+                   Foreground="{DynamicResource TechnicalTextBrush}"
+                   AutomationProperties.AutomationId="{Binding Id, StringFormat='InputQuestion-{0}-TextError', FallbackValue=InputQuestionTextError}"
+                   AutomationProperties.Name="設問文の必須エラー" />
+      </Grid>
+    </Grid>
+
+    <Border x:Name="InputValidationSummary" Grid.Row="3" AutomationProperties.AutomationId="InputValidationSummary">
+      <Grid RowDefinitions="Auto,44" RowSpacing="4" ColumnDefinitions="2*,5*,Auto" ColumnSpacing="8">
+        <TextBlock x:Name="InputCountSummary" Grid.ColumnSpan="3" Text="{Binding InputSummary}" TextWrapping="Wrap"
+                   AutomationProperties.AutomationId="InputSummary" AutomationProperties.Name="回答行と有効設問の件数" />
+        <ComboBox x:Name="InputValidationErrorList" Grid.Row="1"
+                  SelectionChanged="HandleValidationSelectionChanged" IsEnabled="False"
+                  HorizontalAlignment="Stretch" MaxDropDownHeight="264" PlaceholderText="技術エラーなし" TabIndex="16"
+                  AutomationProperties.AutomationId="InputTechnicalErrors" AutomationProperties.Name="入力の技術検証エラー"
+                  ToolTip.Tip="エラーを選ぶと右側で項目と内容の全文を確認できます。">
+          <ComboBox.ItemTemplate>
+            <DataTemplate x:DataType="viewModels:InputValidationError">
+              <TextBlock Text="{Binding Field}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Message}" />
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
+        <TextBox x:Name="InputValidationDetail" Grid.Row="1" Grid.Column="1" IsReadOnly="True"
+                 AcceptsReturn="True" AcceptsTab="False" TextWrapping="Wrap" VerticalAlignment="Stretch"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                 TabIndex="17" AutomationProperties.AutomationId="InputTechnicalErrorDetail"
+                 AutomationProperties.Name="技術検証の項目と内容の全文・読取専用" />
+        <Button x:Name="InputGoToProblemButton" Grid.Row="1" Grid.Column="2" Content="問題箇所へ"
+                Click="HandleGoToProblem" IsEnabled="False" TabIndex="18"
+                AutomationProperties.AutomationId="InputGoToProblem" AutomationProperties.Name="選択した入力エラーの項目へ移動"
+                ToolTip.Tip="この画面で修正できるエラーの入力欄へ移動します。未反映の数値は自動修正しません。" />
+      </Grid>
+    </Border>
+
+    <!-- Copilot login, checkpoint resume and technical-error parts of run preparation. They replace the
+         range/mapping/validation area while open, so the Input step never grows beyond its body.
+         Available only when a host attaches the shell's ExecutionViewModel. -->
+    <Grid x:Name="ExecutionPreparationHost" Grid.Row="1" Grid.RowSpan="3" IsVisible="False"
+          Background="{DynamicResource AppCanvasBrush}" KeyboardNavigation.TabNavigation="Local">
+      <views:ExecutionPreparationPanel x:Name="ExecutionPreparation" DataContext="{x:Null}" />
+    </Grid>  </Grid>
+</UserControl>

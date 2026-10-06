@@ -1,0 +1,229 @@
+{
+  "format": "study-report-evaluator/workbook-clean-spec/v1",
+  "fixed_seed": 20260831,
+  "synthetic_only": true,
+  "contains_personal_data": false,
+  "generator_contract": {
+    "output_extension": ".xlsx",
+    "container": "opc-zip",
+    "namespace_family": "transitional",
+    "deterministic_zip_metadata": true,
+    "generated_binary_is_not_committed_by_g11": true
+  },
+  "cases": [
+    {
+      "id": "WC-001",
+      "title": "one-question workbook with existing styles",
+      "disposition": "accept",
+      "profile": {
+        "sheet_names": ["Original"],
+        "source_sheet": "Original",
+        "question_count": 1,
+        "data_row_count": 2,
+        "column_roles": ["record-key", "main-answer", "learner-prompt", "supplemental", "ignore"],
+        "styles_part": "present",
+        "value_kinds": ["inline-string", "shared-string", "finite-number", "boolean", "empty"]
+      },
+      "assertions": [
+        "package is accepted without repair",
+        "all values are synthetic",
+        "source sheet identity is recorded by sheetId, relationship and name",
+        "new projection does not inherit formula, hyperlink or worksheet relationship",
+        "the output adds Eval, Evaluation_Config and Evaluation_Run without renaming either reserved control sheet",
+        "record-key values remain outside every Copilot payload DTO"
+      ],
+      "requirement_refs": ["FR-008", "FR-009", "FR-010", "FR-020", "ADR-0003"]
+    },
+    {
+      "id": "WC-002",
+      "title": "two-question workbook without a styles part",
+      "disposition": "accept",
+      "profile": {
+        "sheet_names": ["Data"],
+        "source_sheet": "Data",
+        "question_count": 2,
+        "data_row_count": 3,
+        "column_roles": ["record-key", "main-answer", "learner-prompt", "supplemental", "main-answer", "learner-prompt", "supplemental"],
+        "styles_part": "absent",
+        "value_kinds": ["inline-string", "finite-number", "boolean", "iso-date", "empty"]
+      },
+      "assertions": [
+        "a valid source sheet not named Original is accepted",
+        "the minimum ADR-0003 styles part can be added without changing existing parts",
+        "typed values remain typed under the projection contract"
+      ],
+      "requirement_refs": ["FR-010", "FR-013", "ADR-0003"]
+    },
+    {
+      "id": "WC-003",
+      "title": "ten-question workbook with sparse rows and an Eval name collision",
+      "disposition": "accept-after-explicit-name-confirmation",
+      "profile": {
+        "sheet_names": ["Original", "Eval"],
+        "source_sheet": "Original",
+        "question_count": 10,
+        "data_row_count": 12,
+        "intermediate_empty_rows": [5],
+        "style_only_trailing_rows": [20],
+        "existing_eval_sheet_is_unmodified": true,
+        "proposed_eval_sheet": "Eval (2)"
+      },
+      "assertions": [
+        "intermediate empty rows do not truncate the range",
+        "style-only trailing rows do not increase the data count",
+        "existing Eval is preserved",
+        "Eval (2) is used only after explicit confirmation"
+      ],
+      "requirement_refs": ["FR-011", "FR-013", "ADR-0003"]
+    },
+    {
+      "id": "WC-004",
+      "title": "preservation workbook with non-executable package features",
+      "disposition": "accept",
+      "profile": {
+        "sheet_names": ["Original", "Reference"],
+        "source_sheet": "Original",
+        "question_count": 1,
+        "data_row_count": 2,
+        "existing_features": ["table", "auto-filter", "chart", "embedded-image", "custom-xml", "defined-name"],
+        "external_relationships": 0,
+        "macros": 0,
+        "digital_signatures": 0
+      },
+      "assertions": [
+        "all existing non-allowlist part payload hashes are unchanged",
+        "all existing URI, content type and relationship tuples are unchanged",
+        "projection omits table, filter, chart, image, custom XML and defined name"
+      ],
+      "requirement_refs": ["AC-007", "FR-007", "FR-009", "ADR-0003"]
+    },
+    {
+      "id": "WC-005",
+      "title": "local formula with a stored cached value",
+      "disposition": "accept-after-explicit-formula-confirmation",
+      "profile": {
+        "sheet_names": ["Original"],
+        "source_sheet": "Original",
+        "question_count": 1,
+        "local_formula": "SUM(A2:A3)",
+        "cached_value": 3,
+        "external_reference": false,
+        "data_table_formula": false
+      },
+      "assertions": [
+        "formula presence and cached-value limitations are shown before confirmation",
+        "only cached value 3 is projected and identified as an unverified source-workbook snapshot rather than an app-verified result",
+        "no CellFormula node is created in Eval"
+      ],
+      "requirement_refs": ["FR-007", "ADR-0003"]
+    },
+    {
+      "id": "WC-006",
+      "title": "local formula without a stored cached value",
+      "disposition": "block-until-column-is-excluded-or-empty-projection-is-confirmed",
+      "profile": {
+        "sheet_names": ["Original"],
+        "source_sheet": "Original",
+        "question_count": 1,
+        "local_formula": "SUM(A2:A3)",
+        "cached_value": null,
+        "external_reference": false,
+        "data_table_formula": false
+      },
+      "assertions": [
+        "the application does not evaluate the formula",
+        "the execution confirmation cannot pass until the mapping is resolved",
+        "no CellFormula node is created in Eval"
+      ],
+      "requirement_refs": ["FR-007", "ADR-0003"]
+    },
+    {
+      "id": "WC-007",
+      "title": "input file size exactly at the accepted boundary",
+      "disposition": "accept",
+      "boundary": {"dimension":"input_file_bytes","value":104857600,"all_other_dimensions":"strictly-below-limit"},
+      "assertions": ["the inclusive 100 MiB boundary is accepted"],
+      "requirement_refs": ["FR-006"]
+    },
+    {
+      "id": "WC-008",
+      "title": "expanded package size exactly at the accepted boundary",
+      "disposition": "accept",
+      "boundary": {"dimension":"expanded_total_bytes","value":1073741824,"all_other_dimensions":"strictly-below-limit"},
+      "assertions": ["the inclusive 1 GiB boundary is accepted"],
+      "requirement_refs": ["FR-006"]
+    },
+    {
+      "id": "WC-009",
+      "title": "ZIP entry count exactly at the accepted boundary",
+      "disposition": "accept",
+      "boundary": {"dimension":"zip_entry_count","value":10000,"all_other_dimensions":"strictly-below-limit"},
+      "assertions": ["the inclusive 10000-entry boundary is accepted"],
+      "requirement_refs": ["FR-006"]
+    },
+    {
+      "id": "WC-010",
+      "title": "single expanded entry exactly at the accepted boundary",
+      "disposition": "accept",
+      "boundary": {"dimension":"single_expanded_entry_bytes","value":268435456,"all_other_dimensions":"strictly-below-limit"},
+      "assertions": ["the inclusive 256 MiB boundary is accepted"],
+      "requirement_refs": ["FR-006"]
+    },
+    {
+      "id": "WC-011",
+      "title": "compression ratio exactly at the accepted boundary",
+      "disposition": "accept",
+      "boundary": {"dimension":"compression_ratio","expanded_bytes":1000000,"compressed_bytes":10000,"ratio":"100:1","all_other_dimensions":"strictly-below-limit"},
+      "assertions": ["the inclusive 100 to 1 boundary is accepted using exact integer operands"],
+      "requirement_refs": ["FR-006"]
+    },
+    {
+      "id": "WC-012",
+      "title": "used row count exactly at the accepted boundary",
+      "disposition": "accept",
+      "boundary": {"dimension":"used_rows","value":20000,"all_other_dimensions":"strictly-below-limit"},
+      "assertions": ["the inclusive 20000-row boundary is accepted"],
+      "requirement_refs": ["FR-006"]
+    },
+    {
+      "id": "WC-013",
+      "title": "used column count exactly at the accepted boundary",
+      "disposition": "accept",
+      "boundary": {"dimension":"used_columns","value":300,"all_other_dimensions":"strictly-below-limit"},
+      "assertions": ["the inclusive 300-column boundary is accepted"],
+      "requirement_refs": ["FR-006"]
+    },
+    {
+      "id": "WC-014",
+      "title": "worksheet count exactly at the accepted boundary",
+      "disposition": "accept",
+      "boundary": {"dimension":"worksheet_count","value":40,"all_other_dimensions":"strictly-below-limit"},
+      "assertions": ["the inclusive 40-sheet boundary is accepted"],
+      "requirement_refs": ["FR-006"]
+    },
+    {
+      "id": "WC-015",
+      "title": "shared string count exactly at the accepted boundary",
+      "disposition": "accept",
+      "boundary": {"dimension":"shared_string_count","value":2000000,"all_other_dimensions":"strictly-below-limit"},
+      "assertions": ["the inclusive 2000000-shared-string boundary is accepted"],
+      "requirement_refs": ["FR-006"]
+    },
+    {
+      "id": "WC-016",
+      "title": "unique cell format count exactly at the accepted boundary",
+      "disposition": "accept",
+      "boundary": {"dimension":"unique_cell_format_count","value":20000,"all_other_dimensions":"strictly-below-limit"},
+      "assertions": ["the inclusive 20000-format boundary is accepted"],
+      "requirement_refs": ["FR-006"]
+    },
+    {
+      "id": "WC-017",
+      "title": "cell character count exactly at the accepted boundary",
+      "disposition": "accept",
+      "boundary": {"dimension":"cell_characters","value":32767,"all_other_dimensions":"strictly-below-limit"},
+      "assertions": ["the inclusive 32767-character boundary is accepted"],
+      "requirement_refs": ["FR-006"]
+    }
+  ]
+}

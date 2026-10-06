@@ -1,0 +1,301 @@
+<UserControl
+    x:Class="StudyReportEvaluator.App.Views.Charts.ResultsChartsView"
+    x:DataType="viz:ResultsChartsViewModel"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:viz="using:StudyReportEvaluator.App.Visualization"
+    xmlns:charts="using:StudyReportEvaluator.App.Views.Charts"
+    FontSize="14"
+    Foreground="{DynamicResource AppTextBrush}"
+    AutomationProperties.AutomationId="ResultsCharts"
+    AutomationProperties.Name="結果の図（分布・ヒートマップ・類似度一覧）">
+  <UserControl.Styles>
+    <Style Selector="ComboBox, ToggleButton, Button">
+      <Setter Property="MinHeight" Value="44" />
+      <Setter Property="MinWidth" Value="44" />
+      <Setter Property="FontSize" Value="14" />
+    </Style>
+    <Style Selector="ToggleButton, Button">
+      <Setter Property="Padding" Value="10,4" />
+      <Setter Property="VerticalAlignment" Value="Stretch" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="ComboBox:focus-visible, ToggleButton:focus-visible, Button:focus-visible, ListBoxItem:focus-visible">
+      <Setter Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
+      <Setter Property="BorderThickness" Value="3" />
+    </Style>
+    <Style Selector="TextBlock.label">
+      <Setter Property="Foreground" Value="{DynamicResource AppMutedTextBrush}" />
+    </Style>
+    <Style Selector="ListBox.chart">
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="ListBox.chart > ListBoxItem">
+      <Setter Property="Height" Value="44" />
+      <Setter Property="MinHeight" Value="44" />
+      <Setter Property="Padding" Value="6,0" />
+      <Setter Property="Margin" Value="0" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="ListBox#HistogramChartList > ListBoxItem, ListBox#HistogramTableList > ListBoxItem" x:DataType="viz:HistogramBinItem">
+      <Setter Property="AutomationProperties.Name" Value="{Binding AccessibleName}" />
+      <Setter Property="ToolTip.Tip" Value="{Binding AccessibleName}" />
+    </Style>
+    <Style Selector="ListBox#HistogramChartList > ListBoxItem" x:DataType="viz:HistogramBinItem">
+      <Setter Property="AutomationProperties.AutomationId" Value="{Binding AutomationId}" />
+    </Style>
+    <Style Selector="ListBox#HistogramTableList > ListBoxItem" x:DataType="viz:HistogramBinItem">
+      <Setter Property="AutomationProperties.AutomationId" Value="{Binding TableAutomationId}" />
+    </Style>
+    <Style Selector="ListBox#SimilarityList > ListBoxItem" x:DataType="viz:SimilarityEntryItem">
+      <Setter Property="AutomationProperties.AutomationId" Value="{Binding AutomationId}" />
+      <Setter Property="AutomationProperties.Name" Value="{Binding AccessibleName}" />
+      <Setter Property="ToolTip.Tip" Value="{Binding AccessibleName}" />
+    </Style>
+    <Style Selector="charts|ProportionalBar">
+      <Setter Property="Fill" Value="{DynamicResource AppAccentBrush}" />
+      <Setter Property="Outline" Value="{DynamicResource AppBorderBrush}" />
+    </Style>
+    <Style Selector="charts|HeatmapCell">
+      <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource AppTextBrush}" />
+      <Setter Property="Tint" Value="{DynamicResource AppAccentSoftBrush}" />
+      <Setter Property="Bar" Value="{DynamicResource AppAccentBrush}" />
+      <Setter Property="Outline" Value="{DynamicResource AppBorderBrush}" />
+      <Setter Property="Blank" Value="{DynamicResource TechnicalBorderBrush}" />
+      <Setter Property="FocusBrush" Value="{DynamicResource FocusRingBrush}" />
+      <Setter Property="Selected" Value="{DynamicResource AppAccentStrongBrush}" />
+    </Style>
+    <Style Selector="Border.notice">
+      <Setter Property="Background" Value="{DynamicResource WarningBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource WarningBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="Padding" Value="6,2" />
+    </Style>
+    <Style Selector="Border.notice TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource WarningTextBrush}" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid x:Name="ChartsLayout" RowDefinitions="Auto,Auto,Auto,Auto,Auto,*" Margin="4">
+    <!-- FR-071: without data, the reason replaces the charts. -->
+    <ScrollViewer Grid.RowSpan="6" IsVisible="{Binding IsEmpty}" HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto">
+      <StackPanel Margin="4" Spacing="4">
+        <TextBlock x:Name="ResultsChartEmptyTitle" Text="{Binding EmptyTitle}" FontWeight="SemiBold" TextWrapping="Wrap"
+                   AutomationProperties.AutomationId="ResultsChartEmpty" />
+        <TextBlock Text="{Binding EmptyReason}" TextWrapping="Wrap"
+                   AutomationProperties.AutomationId="ResultsChartEmptyReason" />
+      </StackPanel>
+    </ScrollViewer>
+
+    <Grid IsVisible="{Binding HasData}" ColumnDefinitions="*,Auto" ColumnSpacing="4" Margin="0,0,0,4">
+      <ComboBox x:Name="ChartKindSelector" ItemsSource="{Binding KindNames}"
+                SelectedIndex="{Binding SelectedKindIndex, Mode=TwoWay}" HorizontalAlignment="Stretch"
+                AutomationProperties.AutomationId="ResultsChartKind"
+                AutomationProperties.Name="図の種類。分布（ヒストグラム）・ヒートマップ・類似度一覧から選ぶ"
+                ToolTip.Tip="図の種類を切り替えます。絞り込みと選択中の行は切り替えても保たれます。" />
+      <ToggleButton x:Name="ShowTableToggle" Grid.Column="1" Content="表で見る"
+                    IsChecked="{Binding ShowTable, Mode=TwoWay}" IsVisible="{Binding CanShowTable}"
+                    AutomationProperties.AutomationId="ResultsChartShowTable"
+                    AutomationProperties.Name="表で見る。図と同じ値を数値の表で表示する"
+                    ToolTip.Tip="図と同じ値を数値の表で表示します。もう一度押すと図に戻ります。" />
+    </Grid>
+
+    <Grid Grid.Row="1" IsVisible="{Binding IsFilterActive}" ColumnDefinitions="*,Auto" ColumnSpacing="4" Margin="0,0,0,4">
+      <TextBlock Text="{Binding FilterText}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                 FontWeight="SemiBold" ToolTip.Tip="{Binding FilterText}"
+                 AutomationProperties.AutomationId="ResultsChartFilterText" />
+      <Button x:Name="ChartClearFilterButton" Grid.Column="1" Content="絞り込みを解除"
+              Command="{Binding ClearFilterCommand}"
+              AutomationProperties.AutomationId="ResultsChartClearFilter"
+              AutomationProperties.Name="絞り込みを解除して全行を表示" />
+    </Grid>
+
+    <ComboBox x:Name="SimilarityQuestionSelector" Grid.Row="2" IsVisible="{Binding ShowSimilarity}"
+              ItemsSource="{Binding Questions}" SelectedItem="{Binding SelectedSimilarityQuestion, Mode=TwoWay}"
+              HorizontalAlignment="Stretch" Margin="0,0,0,4"
+              AutomationProperties.AutomationId="ResultsSimilarityQuestion"
+              AutomationProperties.Name="類似度一覧の設問">
+      <ComboBox.ItemTemplate>
+        <DataTemplate x:DataType="viz:ChartQuestionItem">
+          <TextBlock Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding DisplayText}" />
+        </DataTemplate>
+      </ComboBox.ItemTemplate>
+    </ComboBox>
+
+    <Border Grid.Row="3" Classes="notice" IsVisible="{Binding ShowSimilarity}" Margin="0,0,0,4"
+            AutomationProperties.AutomationId="ResultsSimilarityNotice">
+      <TextBlock Text="{Binding SimilarityNoticeText}" TextWrapping="Wrap" FontWeight="SemiBold"
+                 AutomationProperties.AutomationId="ResultsSimilarityNoticeText" />
+    </Border>
+
+    <ScrollViewer x:Name="ChartSummaryScroll" Grid.Row="4" IsVisible="{Binding HasData}" MaxHeight="68" Margin="0,0,0,4" Focusable="True"
+                  HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto"
+                  AutomationProperties.AutomationId="ResultsChartSummaryScroll"
+                  AutomationProperties.Name="図の要約と凡例の全文">
+      <StackPanel Spacing="2">
+        <Border Classes="notice" IsVisible="{Binding IsProvisional}" HorizontalAlignment="Left"
+                AutomationProperties.AutomationId="ResultsChartProvisional"
+                AutomationProperties.Name="{Binding ProvisionalDescription}">
+          <TextBlock TextWrapping="Wrap"><Run Text="{Binding ProvisionalLabelText}" FontWeight="Bold" /><Run Text=" " /><Run Text="{Binding ProvisionalDescription}" /></TextBlock>
+        </Border>
+        <TextBlock x:Name="ChartSummaryText" Text="{Binding SummaryText}" TextWrapping="Wrap"
+                   AutomationProperties.AutomationId="ResultsChartSummary"
+                   AutomationProperties.Name="{Binding SummaryText}"
+                   AutomationProperties.LiveSetting="Polite" />
+        <TextBlock Text="{Binding StatusText}" IsVisible="{Binding HasStatus}" TextWrapping="Wrap" FontWeight="SemiBold"
+                   AutomationProperties.AutomationId="ResultsChartStatus"
+                   AutomationProperties.Name="{Binding StatusText}"
+                   AutomationProperties.LiveSetting="Polite" />
+        <TextBlock Text="{Binding HistogramLegend}" IsVisible="{Binding IsHistogram}" TextWrapping="Wrap" Classes="label"
+                   AutomationProperties.AutomationId="ResultsHistogramLegend" />
+        <TextBlock Text="{Binding HeatmapLegend}" IsVisible="{Binding IsHeatmap}" TextWrapping="Wrap" Classes="label"
+                   AutomationProperties.AutomationId="ResultsHeatmapLegend" />
+      </StackPanel>
+    </ScrollViewer>
+
+    <!-- FR-066 (1): Final_Score histogram. Arrow keys move, Enter filters the list (FR-069). -->
+    <ListBox x:Name="HistogramChartList" Grid.Row="5" Classes="chart" IsVisible="{Binding ShowHistogramChart}"
+             ItemsSource="{Binding HistogramBins}" SelectedItem="{Binding FocusedBin, Mode=TwoWay}"
+             ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+             AutomationProperties.AutomationId="ResultsHistogramChart"
+             AutomationProperties.Name="最終点の分布（ヒストグラム）。矢印キーで区間を移動し、Enter で一覧をその区間の行に絞り込む">
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="viz:HistogramBinItem">
+          <Grid ColumnDefinitions="14,60,*,Auto" ColumnSpacing="4">
+            <TextBlock Text="{Binding Marker}" FontWeight="Bold" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="{Binding Label}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+            <charts:ProportionalBar Grid.Column="2" Height="16" VerticalAlignment="Center"
+                                    Fraction="{Binding Fraction}" IsHatched="{Binding IsBlank}" />
+            <TextBlock Grid.Column="3" Text="{Binding CountText}" VerticalAlignment="Center" FontWeight="SemiBold" />
+          </Grid>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+
+    <!-- FR-070: the same bins as a numeric table. -->
+    <Grid Grid.Row="5" RowDefinitions="Auto,*" IsVisible="{Binding ShowHistogramTable}">
+      <Grid ColumnDefinitions="14,*,Auto" ColumnSpacing="4" Margin="6,0">
+        <TextBlock Grid.Column="1" Text="区間（最終点）" Classes="label" />
+        <TextBlock Grid.Column="2" Text="件数" Classes="label" />
+      </Grid>
+      <ListBox x:Name="HistogramTableList" Grid.Row="1" Classes="chart"
+               ItemsSource="{Binding HistogramBins}" SelectedItem="{Binding FocusedBin, Mode=TwoWay}"
+               ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+               AutomationProperties.AutomationId="ResultsHistogramTable"
+               AutomationProperties.Name="最終点の分布の表。矢印キーで行を移動し、Enter で一覧をその区間の行に絞り込む">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="viz:HistogramBinItem">
+            <Grid ColumnDefinitions="14,*,Auto" ColumnSpacing="4">
+              <TextBlock Text="{Binding Marker}" FontWeight="Bold" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="{Binding RangeText}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+              <TextBlock Grid.Column="2" Text="{Binding CountText}" VerticalAlignment="Center" FontWeight="SemiBold" />
+            </Grid>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </Grid>
+
+    <!-- FR-066 (2): row × question heatmap. Rows are virtualized; arrow keys move between cells. -->
+    <Grid x:Name="HeatmapChartArea" Grid.Row="5" RowDefinitions="Auto,*" IsVisible="{Binding ShowHeatmapChart}">
+      <ScrollViewer x:Name="HeatmapChartHeaderScroll" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
+        <StackPanel Orientation="Horizontal" Height="28">
+          <TextBlock Text="行" Width="72" Padding="4,0" VerticalAlignment="Center" Classes="label" />
+          <ItemsControl ItemsSource="{Binding Questions}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="viz:ChartQuestionItem">
+                <TextBlock Width="44" Text="{Binding ShortLabel}" TextAlignment="Center" VerticalAlignment="Center"
+                           FontWeight="SemiBold" ToolTip.Tip="{Binding DisplayText}"
+                           AutomationProperties.AutomationId="{Binding AutomationId}"
+                           AutomationProperties.Name="{Binding AccessibleName}" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </ScrollViewer>
+      <ScrollViewer x:Name="HeatmapChartScroll" Grid.Row="1" HorizontalScrollBarVisibility="Auto"
+                    VerticalScrollBarVisibility="Auto"
+                    AutomationProperties.AutomationId="ResultsHeatmapScroll">
+        <ItemsControl x:Name="HeatmapChartRows" ItemsSource="{Binding HeatmapRows}"
+                      KeyboardNavigation.TabNavigation="Once"
+                      AutomationProperties.AutomationId="ResultsHeatmapChart"
+                      AutomationProperties.Name="学生行×設問の得点率のヒートマップ。矢印キーでセルを移動し、Enter でその行の詳細を開く">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate><VirtualizingStackPanel /></ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="viz:HeatmapRowItem">
+              <charts:HeatmapRowControl />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+    </Grid>
+
+    <!-- FR-070: the heatmap values as a numeric table (same cells, full texts). -->
+    <Grid x:Name="HeatmapTableArea" Grid.Row="5" RowDefinitions="Auto,*" IsVisible="{Binding ShowHeatmapTable}">
+      <ScrollViewer x:Name="HeatmapTableHeaderScroll" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
+        <StackPanel Orientation="Horizontal" Height="28">
+          <TextBlock Text="行" Width="72" Padding="4,0" VerticalAlignment="Center" Classes="label" />
+          <ItemsControl ItemsSource="{Binding Questions}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="viz:ChartQuestionItem">
+                <TextBlock Width="152" Padding="6,0" Text="{Binding DisplayText}" VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis" FontWeight="SemiBold" ToolTip.Tip="{Binding DisplayText}"
+                           AutomationProperties.AutomationId="{Binding TableAutomationId}"
+                           AutomationProperties.Name="{Binding AccessibleName}" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </ScrollViewer>
+      <ScrollViewer x:Name="HeatmapTableScroll" Grid.Row="1" HorizontalScrollBarVisibility="Auto"
+                    VerticalScrollBarVisibility="Auto"
+                    AutomationProperties.AutomationId="ResultsHeatmapTableScroll">
+        <ItemsControl x:Name="HeatmapTableRows" ItemsSource="{Binding HeatmapRows}"
+                      KeyboardNavigation.TabNavigation="Once"
+                      AutomationProperties.AutomationId="ResultsHeatmapTable"
+                      AutomationProperties.Name="得点率の表。矢印キーでセルを移動し、Enter でその行の詳細を開く">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate><VirtualizingStackPanel /></ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="viz:HeatmapRowItem">
+              <charts:HeatmapRowControl IsTable="True" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+    </Grid>
+
+    <!-- FR-066 (3): similarity per question, descending. No network graph. -->
+    <ListBox x:Name="SimilarityList" Grid.Row="5" Classes="chart" IsVisible="{Binding ShowSimilarity}"
+             ItemsSource="{Binding SimilarityEntries}" SelectedItem="{Binding FocusedSimilarityEntry, Mode=TwoWay}"
+             ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+             AutomationProperties.AutomationId="ResultsSimilarityList"
+             AutomationProperties.Name="参照回答との類似度の降順一覧。矢印キーで移動し、Enter でその行の詳細を開く">
+      <ListBox.ItemsPanel>
+        <ItemsPanelTemplate><VirtualizingStackPanel /></ItemsPanelTemplate>
+      </ListBox.ItemsPanel>
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="viz:SimilarityEntryItem">
+          <StackPanel VerticalAlignment="Center">
+            <TextBlock TextTrimming="CharacterEllipsis"><Run Text="行 " /><Run Text="{Binding SourceRowText}" FontWeight="Bold" /><Run Text="・類似度 " /><Run Text="{Binding SimilarityText}" FontWeight="SemiBold" /></TextBlock>
+            <TextBlock TextTrimming="CharacterEllipsis"><Run Text="減点 " /><Run Text="{Binding PenaltyText}" /><Run Text="・最大 " /><Run Text="{Binding PeerMaxText}" /><Run Text="（" /><Run Text="{Binding PeerRowText}" /><Run Text="）" /></TextBlock>
+          </StackPanel>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+  </Grid>
+</UserControl>

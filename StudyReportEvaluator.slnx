@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/StudyReportEvaluator.Core/StudyReportEvaluator.Core.csproj" />
+    <Project Path="src/StudyReportEvaluator.App/StudyReportEvaluator.App.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/StudyReportEvaluator.Core.Tests/StudyReportEvaluator.Core.Tests.csproj" />
+    <Project Path="tests/StudyReportEvaluator.App.Tests/StudyReportEvaluator.App.Tests.csproj" />
+  </Folder>
+</Solution>

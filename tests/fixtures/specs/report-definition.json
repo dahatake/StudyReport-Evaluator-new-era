@@ -1,0 +1,52 @@
+{
+  "format": "study-report-evaluator/report-definition-fixture-spec/v1",
+  "fixed_seed": 20260831,
+  "synthetic_only": true,
+  "contains_personal_data": false,
+  "schema_path": "eng/schemas/report-definition-v1.schema.json",
+  "base_profiles": {
+    "ja": "eng/schemas/examples/report-definition.synthetic-ja.json",
+    "en": "eng/schemas/examples/report-definition.synthetic-en.json"
+  },
+  "case_contract": "Unless stated otherwise, each negative case applies exactly one mutation to the named base profile.",
+  "positive_cases": [
+    {"id":"RD-P001","base":"ja","expected_schema":"accept","expected_semantic":"accept-after-G-16-rounding-range-is-available","requirement_refs":["ADR-0009"]},
+    {"id":"RD-P002","base":"en","expected_schema":"accept","expected_semantic":"accept-after-G-16-rounding-range-is-available","assertion":"zero missing flags and max_missing_flags_per_item zero are valid","requirement_refs":["ADR-0009"]},
+    {"id":"RD-P003","construction":"two otherwise equal valid profiles with different revision strings","expected":"different-canonical-snapshot-hashes-and-run-ids","requirement_refs":["FR-035","ADR-0009"]},
+    {"id":"RD-P004","construction":"valid actual evaluator and item IDs exactly equal their configured Unicode-scalar maxima","expected":"accept-boundary","requirement_refs":["FR-032","ADR-0009"]},
+    {"id":"RD-P005","construction":"maximum serialized tool arguments exactly 32767 Unicode scalars using the production serializer","expected":"accept-boundary-if-request-context-excel-and-attempt-budgets-also-pass","requirement_refs":["FR-052","ADR-0009"]},
+    {"id":"RD-P006","construction":"profile edited after a run snapshot is created","expected":"old-snapshot-unchanged-and-next-run-uses-new-hash-and-run-id","requirement_refs":["FR-035","ADR-0009"]}
+  ],
+  "negative_cases": [
+    {"id":"RD-N001","base":"ja","mutation":{"operation":"remove","pointer":"/schema"},"expected_code":"REPORT_SCHEMA_INVALID","requirement_refs":["ReportDefinition-contract-1"]},
+    {"id":"RD-N002","base":"ja","mutation":{"operation":"add","pointer":"/launcher_identity","value":"synthetic-label"},"expected_code":"REPORT_FORBIDDEN_FIELD","requirement_refs":["ADR-0009"]},
+    {"id":"RD-N003","base":"ja","mutation":{"operation":"add","pointer":"/student_answer","value":"synthetic text"},"expected_code":"REPORT_FORBIDDEN_FIELD","requirement_refs":["ADR-0009"]},
+    {"id":"RD-N004","base":"ja","mutation":{"operation":"replace","pointer":"/report_type_id","value":"1-invalid"},"expected_code":"REPORT_ID_INVALID","requirement_refs":["ReportDefinition-contract-2"]},
+    {"id":"RD-N005","base":"ja","mutation":{"operation":"replace","pointer":"/limits/max_rubric_items_per_evaluator","value":0},"expected_code":"REPORT_LIMIT_INVALID","requirement_refs":["ADR-0009"]},
+    {"id":"RD-N006","base":"ja","mutation":{"operation":"replace","pointer":"/limits/reason_max_scalars","value":32768},"expected_code":"REPORT_LIMIT_INVALID","requirement_refs":["ADR-0009"]},
+    {"id":"RD-N007","base":"ja","construction":"duplicate one question while retaining the same question_id","expected_code":"REPORT_ID_INVALID","requirement_refs":["ReportDefinition-contract-2"]},
+    {"id":"RD-N008","base":"ja","mutation":{"operation":"replace","pointer":"/questions/0/evaluator_ids/0","value":"missing-evaluator"},"expected_code":"REPORT_REFERENCE_INVALID","requirement_refs":["ReportDefinition-contract-3"]},
+    {"id":"RD-N009","base":"ja","mutation":{"operation":"replace","pointer":"/limits/evaluator_id_max_scalars","value":4},"expected_code":"REPORT_LIMIT_INVALID","assertion":"actual eval1 length is five Unicode scalars","requirement_refs":["ReportDefinition-contract-4"]},
+    {"id":"RD-N010","base":"ja","mutation":{"operation":"replace","pointer":"/limits/item_id_max_scalars","value":7},"expected_code":"REPORT_LIMIT_INVALID","assertion":"actual accuracy length is eight Unicode scalars","requirement_refs":["ReportDefinition-contract-4"]},
+    {"id":"RD-N011","base":"ja","mutation":{"operation":"replace","pointer":"/limits/max_rubric_items_per_evaluator","value":1},"additional_construction":"add a second distinct rubric item","expected_code":"REPORT_LIMIT_INVALID","requirement_refs":["ReportDefinition-contract-5"]},
+    {"id":"RD-N012","base":"ja","mutation":{"operation":"replace","pointer":"/limits/max_missing_flags_per_item","value":2},"expected_code":"REPORT_LIMIT_INVALID","assertion":"only one flag is defined","requirement_refs":["ReportDefinition-contract-6"]},
+    {"id":"RD-N013","base":"en","mutation":{"operation":"replace","pointer":"/limits/max_missing_flags_per_item","value":1},"expected_code":"REPORT_LIMIT_INVALID","assertion":"no flags are defined","requirement_refs":["ReportDefinition-contract-6"]},
+    {"id":"RD-N014","base":"ja","construction":"duplicate DETAIL_MISSING with the same flag ID and otherwise distinct text","expected_code":"REPORT_ID_INVALID","requirement_refs":["ReportDefinition-contract-2"]},
+    {"id":"RD-N015","base":"ja","mutation":{"operation":"replace","pointer":"/target_language","value":"123"},"expected_code":"REPORT_LANGUAGE_INVALID","assertion":"shape schema accepts this string but the mandatory BCP 47 semantic parser rejects it","requirement_refs":["ReportDefinition-contract-7"]},
+    {"id":"RD-N016","base":"ja","mutation":{"operation":"replace","pointer":"/evaluators/0/items/0/minimum_score","value":5},"expected_code":"REPORT_SCORE_INVALID","assertion":"minimum exceeds existing maximum 4","requirement_refs":["ReportDefinition-contract-8"]},
+    {"id":"RD-N017","base":"ja","mutation":{"operation":"replace","pointer":"/evaluators/0/items/0/anchors/0/score","value":5},"expected_code":"REPORT_SCORE_INVALID","assertion":"anchor exceeds existing maximum 4","requirement_refs":["ReportDefinition-contract-8"]},
+    {"id":"RD-N018","base":"ja","mutation":{"operation":"replace","pointer":"/evaluators/0/items/0/weight","value":0},"additional_construction":"do not add any other item","expected_code":"REPORT_SCORE_INVALID","assertion":"required item-weight sum is zero","requirement_refs":["ReportDefinition-contract-8"]},
+    {"id":"RD-N019","base":"ja","mutation":{"operation":"replace","pointer":"/aggregate_formula/name","value":"HYPERLINK"},"expected_code":"REPORT_FORMULA_INVALID","requirement_refs":["ReportDefinition-contract-9"]},
+    {"id":"RD-N020","base":"ja","mutation":{"operation":"replace","pointer":"/aggregate_formula/arguments/0/left/arguments/0/setting_id","value":"source-sheet-range"},"expected_code":"REPORT_FORMULA_INVALID","requirement_refs":["ReportDefinition-contract-9"]},
+    {"id":"RD-N021","base":"ja","mutation":{"operation":"replace","pointer":"/questions/0/prompt_template","value":"{{question}}\n{{unknown}}\n{{answer}}"},"expected_code":"REPORT_PROMPT_INVALID","requirement_refs":["ReportDefinition-contract-10"]},
+    {"id":"RD-N022","base":"ja","mutation":{"operation":"replace","pointer":"/limits/reason_source_quote_rejection_threshold_scalars","value":401},"expected_code":"REPORT_LIMIT_INVALID","assertion":"threshold exceeds reason_max_scalars 400","requirement_refs":["ReportDefinition-contract-12"]},
+    {"id":"RD-N023","base":"ja","construction":"set every configurable maximum to 32767 and build the production maximum instance","expected_code":"REPORT_LIMIT_INVALID","assertion":"reject before session creation when any serialized tool/request/context/Excel budget exceeds its hard ceiling","requirement_refs":["FR-052","ADR-0009"]},
+    {"id":"RD-N024","base":"ja","runtime_context":{"data_rows":20000,"evaluation_units_per_row":2,"worst_case_attempts_per_unit":1},"expected_code":"REPORT_LIMIT_INVALID","assertion":"40000 outbound attempts exceed the run ceiling 20000","requirement_refs":["FR-052","ADR-0009"]},
+    {"id":"RD-N025","base":"ja","construction":"reuse the ja generated result schema for the en profile","expected_code":"REPORT_SCHEMA_INVALID","requirement_refs":["ADR-0009"]},
+    {"id":"RD-N026","base":"ja","construction":"change the saved profile after snapshot and try to resume its old checkpoint under the changed hash","expected_code":"REPORT_SCHEMA_INVALID","requirement_refs":["FR-035","ADR-0009"]},
+    {"id":"RD-N027","raw_json":"{\"schema\":\"urn:study-report-evaluator:report-definition:v1\",\"schema\":\"duplicate\"}","expected_code":"REPORT_SCHEMA_INVALID","assertion":"duplicate JSON property is rejected before schema evaluation","requirement_refs":["ReportDefinition-contract-1"]},
+    {"id":"RD-N028","raw_json":"{\"schema\":\"urn:study-report-evaluator:report-definition:v1\"} trailing","expected_code":"REPORT_SCHEMA_INVALID","assertion":"trailing token is rejected before schema evaluation","requirement_refs":["ReportDefinition-contract-1"]},
+    {"id":"RD-N029","base":"ja","construction":"set rounding_digits outside the engine-common range that G-16 records","expected_code":"REPORT_SCORE_INVALID","assertion":"no numeric range is assumed before G-16 evidence","requirement_refs":["ReportDefinition-contract-8"]},
+    {"id":"RD-N030","base":"ja","mutation":{"operation":"replace","pointer":"/reason_policy/instruction","value":""},"expected_code":"REPORT_SCHEMA_INVALID","assertion":"nonEmptyText rejects the empty string during shape-schema validation","requirement_refs":["ReportDefinition-schema-nonEmptyText"]}
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "3.0",
+  "seed": 20260901,
+  "fixtureSet": "dynamic-quantification-fixed-seed-v3",
+  "files": [
+    {
+      "path": "definition-matrix.json",
+      "sha256": "73F4B7B12DAB4FB2D3C2ECB5E4D46B1C48A0D348755376F91CDEE7068E1D7584"
+    },
+    {
+      "path": "definition-minimal.json",
+      "sha256": "2B1F34D5857C67EF21BA018524ADF968F4CF0EE0A984267217A61CC5B4CADFBE"
+    },
+    {
+      "path": "result-oracles.json",
+      "sha256": "823A99CE129831D53B75DE368CC9C54FAAD3038223589FA610217453C83B7483"
+    },
+    {
+      "path": "workbook-scenarios.json",
+      "sha256": "54A54D6D83CD6CBA84BD2E9E6A35F882A3A59907A6A652CB898F8BB550C92E10"
+    }
+  ],
+  "contentDataIncluded": false
+}

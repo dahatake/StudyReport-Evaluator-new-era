@@ -1,0 +1,72 @@
+<Application
+    x:Class="StudyReportEvaluator.App.App"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    RequestedThemeVariant="Default">
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="avares://StudyReportEvaluator.App/Resources/WorkflowIcons.axaml" />
+      </ResourceDictionary.MergedDictionaries>
+      <!-- NFR-UX-010: Light/Dark follow the OS; high contrast replaces these with system colours at run time. -->
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="AppCanvasBrush" Color="#F4F7FC" />
+          <SolidColorBrush x:Key="AppSurfaceBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="AppSurfaceMutedBrush" Color="#EEF2F8" />
+          <SolidColorBrush x:Key="AppTextBrush" Color="#172033" />
+          <SolidColorBrush x:Key="AppMutedTextBrush" Color="#5D677A" />
+          <SolidColorBrush x:Key="AppBorderBrush" Color="#D8DFEB" />
+          <SolidColorBrush x:Key="AppAccentBrush" Color="#4656E8" />
+          <SolidColorBrush x:Key="AppAccentStrongBrush" Color="#3142D0" />
+          <SolidColorBrush x:Key="AppAccentSoftBrush" Color="#E9ECFF" />
+          <SolidColorBrush x:Key="AppOnAccentBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="AppCompletedBrush" Color="#087A72" />
+          <SolidColorBrush x:Key="AppCompletedSoftBrush" Color="#E2F7F3" />
+          <SolidColorBrush x:Key="AppHeroBrush" Color="#17213B" />
+          <SolidColorBrush x:Key="AppHeroMutedBrush" Color="#BFC9E5" />
+          <SolidColorBrush x:Key="WarningBackgroundBrush" Color="#FFF4D6" />
+          <SolidColorBrush x:Key="WarningBorderBrush" Color="#EAB547" />
+          <SolidColorBrush x:Key="WarningTextBrush" Color="#6D4600" />
+          <SolidColorBrush x:Key="TechnicalBackgroundBrush" Color="#EAF5FF" />
+          <SolidColorBrush x:Key="TechnicalBorderBrush" Color="#62A9E8" />
+          <SolidColorBrush x:Key="TechnicalTextBrush" Color="#174F7C" />
+          <SolidColorBrush x:Key="CancelBackgroundBrush" Color="#FFF0F0" />
+          <SolidColorBrush x:Key="CancelTextBrush" Color="#8E2525" />
+          <SolidColorBrush x:Key="CancelBorderBrush" Color="#D68A8A" />
+          <SolidColorBrush x:Key="FocusRingBrush" Color="#7A35D2" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="AppCanvasBrush" Color="#1A1D24" />
+          <SolidColorBrush x:Key="AppSurfaceBrush" Color="#23272F" />
+          <SolidColorBrush x:Key="AppSurfaceMutedBrush" Color="#2C313B" />
+          <SolidColorBrush x:Key="AppTextBrush" Color="#E9EDF5" />
+          <SolidColorBrush x:Key="AppMutedTextBrush" Color="#AEB7C6" />
+          <SolidColorBrush x:Key="AppBorderBrush" Color="#4A5263" />
+          <SolidColorBrush x:Key="AppAccentBrush" Color="#4A57D8" />
+          <SolidColorBrush x:Key="AppAccentStrongBrush" Color="#9AA4FF" />
+          <SolidColorBrush x:Key="AppAccentSoftBrush" Color="#2D3263" />
+          <SolidColorBrush x:Key="AppOnAccentBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="AppCompletedBrush" Color="#5ED6C9" />
+          <SolidColorBrush x:Key="AppCompletedSoftBrush" Color="#173B37" />
+          <SolidColorBrush x:Key="AppHeroBrush" Color="#10141F" />
+          <SolidColorBrush x:Key="AppHeroMutedBrush" Color="#9DA8C9" />
+          <SolidColorBrush x:Key="WarningBackgroundBrush" Color="#3A2F14" />
+          <SolidColorBrush x:Key="WarningBorderBrush" Color="#C9962E" />
+          <SolidColorBrush x:Key="WarningTextBrush" Color="#F6D891" />
+          <SolidColorBrush x:Key="TechnicalBackgroundBrush" Color="#152A3D" />
+          <SolidColorBrush x:Key="TechnicalBorderBrush" Color="#4F8FCC" />
+          <SolidColorBrush x:Key="TechnicalTextBrush" Color="#AED6F7" />
+          <SolidColorBrush x:Key="CancelBackgroundBrush" Color="#3D1F22" />
+          <SolidColorBrush x:Key="CancelTextBrush" Color="#FFB4B4" />
+          <SolidColorBrush x:Key="CancelBorderBrush" Color="#B05A5A" />
+          <SolidColorBrush x:Key="FocusRingBrush" Color="#C49BFF" />
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </Application.Resources>
+  <Application.Styles>
+    <FluentTheme DensityStyle="Compact" />
+    <StyleInclude Source="avares://StudyReportEvaluator.App/Styles/Accessibility.axaml" />
+  </Application.Styles>
+</Application>

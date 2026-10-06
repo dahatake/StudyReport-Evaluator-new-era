@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "observationDate": "2026-09-02",
+  "captureBoundary": "Captured before this evidence file and its companion report were added. No repository file was modified by the capture commands.",
+  "workspace": "C:\\GitHub\\StudyReport-Evaluator",
+  "powerShell": {
+    "edition": "Core",
+    "version": "7.6.5"
+  },
+  "git": {
+    "branch": "main",
+    "head": "c9db2fc038cc09874a142d6575b47bdb49ac4b55",
+    "describe": "c9db2fc-dirty",
+    "dirty": true,
+    "statusEntryCount": 45,
+    "localTagCount": 0,
+    "githubWorkflowDirectoryExists": false,
+    "changelogFileCount": 0
+  },
+  "evaluatedVersionProperties": {
+    "project": "src/StudyReportEvaluator.App/StudyReportEvaluator.App.csproj",
+    "version": "1.0.0",
+    "versionPrefix": "1.0.0",
+    "versionSuffix": ""
+  },
+  "versionManagementSurfaces": {
+    "explicitVersionPropertyObservedInProjectOrCommonProps": false,
+    "versionCommandObservedInProductionSource": false,
+    "dedicatedAboutSurfaceObservedInProductionSource": false,
+    "acceptedLaunchOptions": [
+      "--input",
+      "--prompt"
+    ],
+    "packageFileName": "StudyReportEvaluator-win-x64.zip",
+    "packageFileNameContainsProductVersion": false,
+    "packageRootName": "StudyReportEvaluator-win-x64",
+    "packageRootNameContainsProductVersion": false
+  },
+  "publishedAppBinary": {
+    "path": "artifacts/package/publish/win-x64/StudyReportEvaluator.App.dll",
+    "assemblyVersion": "1.0.0.0",
+    "fileVersion": "1.0.0.0",
+    "productVersion": "1.0.0+c9db2fc038cc09874a142d6575b47bdb49ac4b55"
+  },
+  "publishedRuntime": {
+    "path": "artifacts/package/publish/win-x64/StudyReportEvaluator.App.runtimeconfig.json",
+    "tfm": "net10.0",
+    "includedFrameworks": [
+      {
+        "name": "Microsoft.NETCore.App",
+        "version": "10.0.11"
+      }
+    ]
+  },
+  "runtimeCompatibilityProbe": {
+    "parser": "System.Version.TryParse",
+    "stableInput": "1.0.0",
+    "stableTryParse": true,
+    "stableMajor": 1,
+    "prereleaseInput": "1.0.0-rc.1",
+    "prereleaseTryParse": false,
+    "prereleaseMajor": null
+  },
+  "githubPublicApi": {
+    "releasesUrl": "https://api.github.com/repos/dahatake/StudyReport-Evaluator/releases?per_page=100",
+    "releaseCount": 0,
+    "tagsUrl": "https://api.github.com/repos/dahatake/StudyReport-Evaluator/tags?per_page=100",
+    "remoteTagCount": 0
+  },
+  "captureCommands": [
+    "git status --porcelain=v1",
+    "git branch --show-current",
+    "git rev-parse HEAD",
+    "git describe --tags --always --dirty",
+    "git tag --list",
+    "dotnet msbuild .\\src\\StudyReportEvaluator.App\\StudyReportEvaluator.App.csproj -nologo -getProperty:Version,VersionPrefix,VersionSuffix",
+    "[System.Reflection.AssemblyName]::GetAssemblyName(<published-app-dll>)",
+    "[System.Diagnostics.FileVersionInfo]::GetVersionInfo(<published-app-dll>)",
+    "[System.Version]::TryParse(\"1.0.0\", <out>)",
+    "[System.Version]::TryParse(\"1.0.0-rc.1\", <out>)"
+  ],
+  "interpretationLimits": [
+    "The working tree was dirty, so the commit recorded in ProductVersion does not prove which uncommitted changes, if any, were included in the inspected binary.",
+    "The GitHub public API results establish that no public releases or remote tags were returned on the observation date; they do not reveal private draft releases.",
+    "The published artifact directory is ignored by Git and is local generated evidence, not a committed release record."
+  ]
+}

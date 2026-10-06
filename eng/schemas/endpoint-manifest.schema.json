@@ -1,0 +1,918 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:study-report-evaluator:record:endpoint-manifest:v1",
+  "title": "StudyReport Evaluator decoded endpoint manifest payload v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "record_type",
+    "id",
+    "iss",
+    "aud",
+    "iat",
+    "nbf",
+    "exp",
+    "sequence",
+    "body"
+  ],
+  "properties": {
+    "schema": {
+      "const": "urn:study-report-evaluator:record:endpoint-manifest:v1"
+    },
+    "record_type": {
+      "const": "endpoint-manifest"
+    },
+    "id": {
+      "$ref": "#/$defs/uuid"
+    },
+    "iss": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "aud": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "iat": {
+      "$ref": "#/$defs/utcSecond"
+    },
+    "nbf": {
+      "$ref": "#/$defs/utcSecond"
+    },
+    "exp": {
+      "$ref": "#/$defs/utcSecond"
+    },
+    "sequence": {
+      "$ref": "#/$defs/sequence"
+    },
+    "body": {
+      "$ref": "#/$defs/body"
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "identifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "runtimeIdentifier": {
+      "enum": [
+        "win-x64",
+        "win-arm64",
+        "linux-x64",
+        "linux-arm64",
+        "linux-musl-x64",
+        "linux-musl-arm64",
+        "osx-x64",
+        "osx-arm64"
+      ]
+    },
+    "serviceOrigin": {
+      "enum": ["github.com", "ghe.com"]
+    },
+    "copilotPlan": {
+      "enum": ["business", "enterprise"]
+    },
+    "modelId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$"
+    },
+    "hostPattern": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 255,
+      "pattern": "^(?:\\*\\.)?(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"
+    },
+    "safeAbsolutePath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "pattern": "^(?!.*//)(?!.*(?:/\\.{1,2})(?:/|$))(?!.*%(?:25|2F|5C|2E))/(?:[A-Za-z0-9._~!$&'()*+,;=:@/-]|%[0-9A-F]{2})*$"
+    },
+    "pathRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["match", "value"],
+      "properties": {
+        "match": {
+          "enum": ["exact", "segment-prefix"]
+        },
+        "value": {
+          "$ref": "#/$defs/safeAbsolutePath"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "match": { "const": "segment-prefix" }
+            },
+            "required": ["match"]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "string",
+                "minLength": 3,
+                "pattern": "/$"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "utcSecond": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z$"
+    },
+    "sequence": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9A-F]{64}$"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "uri",
+        "retrieved_at",
+        "http_status",
+        "response_bytes",
+        "response_sha256"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "kind": {
+          "enum": ["copilot-allowlist-reference", "github-meta-api"]
+        },
+        "uri": {
+          "type": "string",
+          "format": "uri"
+        },
+        "retrieved_at": {
+          "$ref": "#/$defs/utcSecond"
+        },
+        "http_status": {
+          "const": 200
+        },
+        "response_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "response_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": { "const": "copilot-allowlist-reference" }
+            },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "uri": {
+                "const": "https://docs.github.com/en/copilot/reference/copilot-allowlist-reference"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": { "const": "github-meta-api" }
+            },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "uri": { "const": "https://api.github.com/meta" }
+            }
+          }
+        }
+      ]
+    },
+    "contractEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "captured_at",
+        "capture_profile",
+        "artifact_bytes",
+        "artifact_sha256",
+        "content_capture",
+        "runtime_identifier",
+        "sdk_package_id",
+        "sdk_version",
+        "sdk_package_sha256",
+        "cli_version",
+        "cli_artifact_sha256",
+        "service_origin",
+        "copilot_plan",
+        "validated_model_ids"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "captured_at": {
+          "$ref": "#/$defs/utcSecond"
+        },
+        "capture_profile": {
+          "const": "app-cli-process-tree-v1"
+        },
+        "artifact_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "artifact_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "content_capture": {
+          "const": false
+        },
+        "runtime_identifier": {
+          "$ref": "#/$defs/runtimeIdentifier"
+        },
+        "sdk_package_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "sdk_version": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "sdk_package_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "cli_version": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "cli_artifact_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "service_origin": {
+          "$ref": "#/$defs/serviceOrigin"
+        },
+        "copilot_plan": {
+          "$ref": "#/$defs/copilotPlan"
+        },
+        "validated_model_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/modelId"
+          }
+        }
+      }
+    },
+    "features": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "telemetry",
+        "experimentation",
+        "voice",
+        "public_code_detection",
+        "usage_report_download",
+        "automatic_update",
+        "remote_sessions"
+      ],
+      "properties": {
+        "telemetry": { "const": false },
+        "experimentation": { "const": false },
+        "voice": { "const": false },
+        "public_code_detection": { "const": false },
+        "usage_report_download": { "const": false },
+        "automatic_update": { "const": false },
+        "remote_sessions": { "const": false }
+      }
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "process",
+        "purpose",
+        "scheme",
+        "host_pattern",
+        "port",
+        "methods",
+        "path_rules",
+        "query_policy",
+        "redirect_policy",
+        "request_data_classes",
+        "sends_student_data",
+        "required",
+        "official_source_refs",
+        "contract_evidence_refs"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "process": {
+          "enum": ["app", "copilot-cli", "browser"]
+        },
+        "purpose": {
+          "enum": [
+            "oauth-device-code",
+            "oauth-token",
+            "oauth-verification",
+            "identity",
+            "org-membership",
+            "model-catalog",
+            "inference",
+            "control-plane",
+            "session-delete"
+          ]
+        },
+        "scheme": {
+          "const": "https"
+        },
+        "host_pattern": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/hostPattern"
+            },
+            {
+              "not": {
+                "enum": [
+                  "*.github.com",
+                  "*.githubusercontent.com",
+                  "*.githubcopilot.com"
+                ]
+              }
+            }
+          ]
+        },
+        "port": {
+          "const": 443
+        },
+        "methods": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": ["GET", "POST"]
+          }
+        },
+        "path_rules": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/pathRule"
+          }
+        },
+        "query_policy": {
+          "enum": ["none", "closed-builder-v1"]
+        },
+        "redirect_policy": {
+          "const": "deny"
+        },
+        "request_data_classes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "oauth-client-id",
+              "oauth-device-code",
+              "oauth-refresh-token",
+              "github-access-token",
+              "approved-org-slug",
+              "model-id",
+              "student-content",
+              "evaluation-design",
+              "control-metadata"
+            ]
+          }
+        },
+        "sends_student_data": {
+          "type": "boolean"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "official_source_refs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        },
+        "contract_evidence_refs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "process": { "const": "app" }
+            },
+            "required": ["process"]
+          },
+          "then": {
+            "properties": {
+              "purpose": {
+                "enum": [
+                  "oauth-device-code",
+                  "oauth-token",
+                  "identity",
+                  "org-membership"
+                ]
+              },
+              "sends_student_data": { "const": false },
+              "query_policy": { "const": "none" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "process": { "const": "copilot-cli" }
+            },
+            "required": ["process"]
+          },
+          "then": {
+            "properties": {
+              "purpose": {
+                "enum": [
+                  "model-catalog",
+                  "inference",
+                  "control-plane",
+                  "session-delete"
+                ]
+              },
+              "request_data_classes": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "process": { "const": "browser" }
+            },
+            "required": ["process"]
+          },
+          "then": {
+            "properties": {
+              "purpose": { "const": "oauth-verification" },
+              "methods": { "const": ["GET"] },
+              "query_policy": { "const": "none" },
+              "request_data_classes": { "maxItems": 0 },
+              "sends_student_data": { "const": false }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "purpose": { "const": "oauth-device-code" }
+            },
+            "required": ["purpose"]
+          },
+          "then": {
+            "properties": {
+              "path_rules": {
+                "const": [
+                  { "match": "exact", "value": "/login/device/code" }
+                ]
+              },
+              "request_data_classes": {
+                "minItems": 1,
+                "items": {
+                  "enum": ["oauth-client-id", "control-metadata"]
+                },
+                "contains": { "const": "oauth-client-id" }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "purpose": { "const": "oauth-token" }
+            },
+            "required": ["purpose"]
+          },
+          "then": {
+            "properties": {
+              "path_rules": {
+                "const": [
+                  { "match": "exact", "value": "/login/oauth/access_token" }
+                ]
+              },
+              "request_data_classes": {
+                "minItems": 2,
+                "items": {
+                  "enum": [
+                    "oauth-client-id",
+                    "oauth-device-code",
+                    "oauth-refresh-token",
+                    "control-metadata"
+                  ]
+                },
+                "allOf": [
+                  { "contains": { "const": "oauth-client-id" } },
+                  {
+                    "anyOf": [
+                      { "contains": { "const": "oauth-device-code" } },
+                      { "contains": { "const": "oauth-refresh-token" } }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "purpose": { "const": "identity" }
+            },
+            "required": ["purpose"]
+          },
+          "then": {
+            "properties": {
+              "path_rules": {
+                "const": [
+                  { "match": "exact", "value": "/user" }
+                ]
+              },
+              "request_data_classes": {
+                "minItems": 1,
+                "items": {
+                  "enum": ["github-access-token", "control-metadata"]
+                },
+                "contains": { "const": "github-access-token" }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "purpose": { "const": "org-membership" }
+            },
+            "required": ["purpose"]
+          },
+          "then": {
+            "properties": {
+              "path_rules": {
+                "minItems": 1,
+                "maxItems": 1,
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "match": { "const": "exact" },
+                    "value": {
+                      "type": "string",
+                      "pattern": "^/user/memberships/orgs/[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
+                    }
+                  }
+                }
+              },
+              "request_data_classes": {
+                "minItems": 2,
+                "items": {
+                  "enum": [
+                    "github-access-token",
+                    "approved-org-slug",
+                    "control-metadata"
+                  ]
+                },
+                "allOf": [
+                  { "contains": { "const": "github-access-token" } },
+                  { "contains": { "const": "approved-org-slug" } }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "purpose": { "const": "oauth-verification" }
+            },
+            "required": ["purpose"]
+          },
+          "then": {
+            "properties": {
+              "path_rules": {
+                "const": [
+                  { "match": "exact", "value": "/login/device" }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "purpose": { "const": "inference" }
+            },
+            "required": ["purpose"]
+          },
+          "then": {
+            "properties": {
+              "sends_student_data": { "const": true },
+              "request_data_classes": {
+                "minItems": 4,
+                "items": {
+                  "enum": [
+                    "github-access-token",
+                    "model-id",
+                    "student-content",
+                    "evaluation-design",
+                    "control-metadata"
+                  ]
+                },
+                "allOf": [
+                  { "contains": { "const": "github-access-token" } },
+                  { "contains": { "const": "model-id" } },
+                  { "contains": { "const": "student-content" } },
+                  { "contains": { "const": "evaluation-design" } }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "purpose": {
+                "enum": ["model-catalog", "control-plane", "session-delete"]
+              }
+            },
+            "required": ["purpose"]
+          },
+          "then": {
+            "properties": {
+              "sends_student_data": { "const": false }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "purpose": {
+                "enum": ["oauth-device-code", "oauth-token"]
+              }
+            },
+            "required": ["purpose"]
+          },
+          "then": {
+            "properties": {
+              "methods": { "const": ["POST"] }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "purpose": {
+                "enum": ["identity", "org-membership"]
+              }
+            },
+            "required": ["purpose"]
+          },
+          "then": {
+            "properties": {
+              "methods": { "const": ["GET"] }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "sends_student_data": { "const": true }
+            },
+            "required": ["sends_student_data"]
+          },
+          "then": {
+            "properties": {
+              "request_data_classes": {
+                "contains": { "const": "student-content" }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "request_data_classes": {
+                "not": {
+                  "contains": { "const": "student-content" }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "body": {
+      "type": "object",
+      "additionalProperties": false,
+      "$comment": "Schema validation is necessary but not sufficient. ADR-0007 requires post-schema semantic checks for unique IDs/effective tuples, source references, evidence binding, allow/deny language intersection, plan/origin binding, and approval records.",
+      "required": [
+        "manifest_version",
+        "scope",
+        "policy_profile",
+        "service_origin",
+        "copilot_plan",
+        "runtime_identifier",
+        "official_sources",
+        "sdk_package_id",
+        "sdk_version",
+        "sdk_package_sha256",
+        "cli_version",
+        "cli_artifact_sha256",
+        "validated_model_ids",
+        "contract_evidence",
+        "entries",
+        "denied_hosts",
+        "features",
+        "approval_record_ids"
+      ],
+      "properties": {
+        "manifest_version": {
+          "const": "1"
+        },
+        "scope": {
+          "const": "installed-app-runtime"
+        },
+        "policy_profile": {
+          "const": "default-deny-collision-reject-v1"
+        },
+        "service_origin": {
+          "$ref": "#/$defs/serviceOrigin"
+        },
+        "copilot_plan": {
+          "$ref": "#/$defs/copilotPlan"
+        },
+        "runtime_identifier": {
+          "$ref": "#/$defs/runtimeIdentifier"
+        },
+        "enterprise_slug": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 63,
+          "pattern": "^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"
+        },
+        "official_sources": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/source"
+          },
+          "allOf": [
+            {
+              "contains": {
+                "type": "object",
+                "required": ["kind"],
+                "properties": {
+                  "kind": { "const": "copilot-allowlist-reference" }
+                }
+              }
+            },
+            {
+              "contains": {
+                "type": "object",
+                "required": ["kind"],
+                "properties": {
+                  "kind": { "const": "github-meta-api" }
+                }
+              }
+            }
+          ]
+        },
+        "sdk_package_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "sdk_version": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "sdk_package_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "cli_version": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "cli_artifact_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "validated_model_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/modelId"
+          }
+        },
+        "contract_evidence": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/contractEvidence"
+          }
+        },
+        "entries": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/entry"
+          }
+        },
+        "denied_hosts": {
+          "type": "array",
+          "minItems": 9,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/hostPattern"
+          },
+          "allOf": [
+            { "contains": { "const": "collector.github.com" } },
+            { "contains": { "const": "copilot-telemetry.githubusercontent.com" } },
+            { "contains": { "const": "default.exp-tas.com" } },
+            { "contains": { "const": "origin-tracker.githubusercontent.com" } },
+            { "contains": { "const": "copilot-reports.github.com" } },
+            { "contains": { "const": "*.b01.azurefd.net" } },
+            { "contains": { "const": "*.blob.core.windows.net" } },
+            { "contains": { "const": "ai.azure.com" } },
+            { "contains": { "const": "*.azureml.ms" } }
+          ]
+        },
+        "features": {
+          "$ref": "#/$defs/features"
+        },
+        "approval_record_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/uuid"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "service_origin": { "const": "ghe.com" }
+            },
+            "required": ["service_origin"]
+          },
+          "then": {
+            "required": ["enterprise_slug"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "service_origin": { "const": "github.com" }
+            },
+            "required": ["service_origin"]
+          },
+          "then": {
+            "not": {
+              "required": ["enterprise_slug"]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

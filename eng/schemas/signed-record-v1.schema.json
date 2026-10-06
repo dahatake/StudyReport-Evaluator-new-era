@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:study-report-evaluator:schema:signed-record-envelope:v1",
+  "title": "StudyReport Evaluator strict flattened JWS envelope v1",
+  "description": "Validates the on-disk flattened JWS envelope. The application must separately base64url-decode, enforce RFC 8785 canonical bytes, validate the decoded definitions and the record-specific body schema, and verify ES256.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "protected",
+    "payload",
+    "signature"
+  ],
+  "properties": {
+    "protected": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9_-]+$"
+    },
+    "payload": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9_-]+$"
+    },
+    "signature": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{86}$"
+    }
+  },
+  "$defs": {
+    "protectedHeader": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "alg",
+        "kid",
+        "typ"
+      ],
+      "properties": {
+        "alg": {
+          "const": "ES256"
+        },
+        "kid": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9._:-]+$"
+        },
+        "typ": {
+          "const": "sre+jws"
+        }
+      }
+    },
+    "recordPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "record_type",
+        "id",
+        "iss",
+        "aud",
+        "iat",
+        "nbf",
+        "exp",
+        "sequence",
+        "body"
+      ],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^urn:study-report-evaluator:record:[a-z0-9-]+:v[1-9][0-9]*$"
+        },
+        "record_type": {
+          "enum": [
+            "operational-policy",
+            "calibration-record",
+            "endpoint-manifest",
+            "completion-record",
+            "key-revocation-list",
+            "offline-recovery-package",
+            "operations-approval-record",
+            "independent-review",
+            "release-manifest"
+          ]
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "iss": {
+          "type": "string",
+          "minLength": 1
+        },
+        "aud": {
+          "type": "string",
+          "minLength": 1
+        },
+        "iat": {
+          "$ref": "#/$defs/utcSecond"
+        },
+        "nbf": {
+          "$ref": "#/$defs/utcSecond"
+        },
+        "exp": {
+          "$ref": "#/$defs/utcSecond"
+        },
+        "sequence": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$"
+        },
+        "body": {
+          "type": "object"
+        }
+      }
+    },
+    "utcSecond": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z$"
+    }
+  },
+  "examples": [
+    {
+      "protected": "eyJhbGciOiJFUzI1NiIsImtpZCI6InRlc3Qta2V5LTIwMjYiLCJ0eXAiOiJzcmUrandzIn0",
+      "payload": "eyJhdWQiOiJzdHVkeS1yZXBvcnQtZXZhbHVhdG9yIiwiYm9keSI6eyJmaW5hbF9maWxlbmFtZSI6InN5bnRoZXRpY19ldmFsdWF0ZWQueGxzeCIsIm1hbmlmZXN0X2RpZ2VzdCI6IkFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUEiLCJydW5faWQiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDIiLCJ3b3JrYm9va19zaGEyNTYiOiJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCIn0sImV4cCI6IjIwMzAtMDEtMDFUMDA6MDA6MDBaIiwiaWF0IjoiMjAyNi0wOC0zMVQwMDowMDowMFoiLCJpZCI6IjAwMDAwMDAwLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwMSIsImlzcyI6InRlc3QtaXNzdWVyIiwibmJmIjoiMjAyNi0wOC0zMVQwMDowMDowMFoiLCJyZWNvcmRfdHlwZSI6ImNvbXBsZXRpb24tcmVjb3JkIiwic2NoZW1hIjoidXJuOnN0dWR5LXJlcG9ydC1ldmFsdWF0b3I6cmVjb3JkOmNvbXBsZXRpb246djEiLCJzZXF1ZW5jZSI6IjEifQ",
+      "signature": "XmWR4hhiHBrHMCJLDrEHvVRBc8-Bu3R3fcvCOR3igc4FKPaHGEQVQ8FtgXA6JM4PDyRS2Ggs2x0fMqYvL1DyUw"
+    }
+  ]
+}

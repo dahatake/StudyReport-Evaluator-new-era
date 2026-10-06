@@ -1,0 +1,373 @@
+<UserControl
+    x:Class="StudyReportEvaluator.App.Views.SettingsView"
+    x:DataType="viewModels:SettingsViewModel"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:viewModels="using:StudyReportEvaluator.App.ViewModels"
+    xmlns:views="using:StudyReportEvaluator.App.Views"
+    Background="{DynamicResource AppCanvasBrush}"
+    Foreground="{DynamicResource AppTextBrush}"
+    FontSize="14"
+    AutomationProperties.AutomationId="SettingsView"
+    AutomationProperties.Name="設定">
+  <UserControl.Styles>
+    <Style Selector="Button, ComboBox, TextBox, TabItem">
+      <Setter Property="MinWidth" Value="44" />
+      <Setter Property="MinHeight" Value="44" />
+      <Setter Property="FontSize" Value="14" />
+      <Setter Property="ToolTip.ShowOnDisabled" Value="True" />
+    </Style>
+    <Style Selector="Button, TabItem">
+      <Setter Property="Padding" Value="8,4" />
+    </Style>
+    <Style Selector="ComboBoxItem">
+      <Setter Property="MinHeight" Value="44" />
+      <Setter Property="FontSize" Value="14" />
+    </Style>
+    <Style Selector="TextBlock">
+      <Setter Property="FontSize" Value="14" />
+    </Style>
+    <Style Selector="TextBlock.settings-label">
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Button.settings-category">
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="Button.settings-category.selected">
+      <Setter Property="Background" Value="{DynamicResource AppAccentSoftBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource AppAccentStrongBrush}" />
+      <Setter Property="BorderThickness" Value="1,1,1,3" />
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+    <Style Selector="Button.settings-save">
+      <Setter Property="Background" Value="{DynamicResource AppAccentBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource AppOnAccentBrush}" />
+    </Style>
+    <Style Selector="TextBox:focus-visible, ComboBox:focus-visible, TabItem:focus-visible, Button:focus-visible">
+      <Setter Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
+      <Setter Property="BorderThickness" Value="3" />
+    </Style>
+    <!-- Embedded editors receive the remaining body, not a separate 450-DIP slot.
+         A side strip preserves vertical room; standalone child layouts are unchanged. -->
+    <Style Selector="views|EvaluatorSettingsView TabControl, views|SpecialEvaluationSettingsView TabControl">
+      <Setter Property="Padding" Value="0" />
+    </Style>
+  </UserControl.Styles>
+
+  <UserControl.Resources>
+    <!-- Built once per Settings owner and retained off-tree between categories. -->
+    <DataTemplate x:Key="CommonSettingsTemplate" x:DataType="viewModels:SettingsViewModel">
+      <TabControl TabStripPlacement="Left" Padding="0"
+                  HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+                  KeyboardNavigation.TabNavigation="Local"
+                  AutomationProperties.AutomationId="SettingsCommonTabs"
+                  AutomationProperties.Name="共通設定の表示切替"
+                  ToolTip.Tip="共通の編集、保存定義、読取専用の診断を切り替えます。">
+        <TabControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <!-- Index the actual Once group before the page, not only its TabItems. -->
+            <WrapPanel TabIndex="0" KeyboardNavigation.TabNavigation="Once" />
+          </ItemsPanelTemplate>
+        </TabControl.ItemsPanel>
+        <TabItem Header="共通設定" TabIndex="0"
+                 AutomationProperties.AutomationId="SettingsCommonEditTab"
+                 AutomationProperties.Name="共通設定と採点定義情報"
+                 ToolTip.Tip="次回用のモデル・並列度・出力先と、採点定義の情報を編集します。">
+          <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto"
+                     TabIndex="1" KeyboardNavigation.TabNavigation="Local"
+                        AutomationProperties.AutomationId="SettingsCommonFieldsScroll"
+                        AutomationProperties.Name="共通設定の本文"
+                        ToolTip.Tip="通常サイズでは全項目を表示します。長い説明や狭い表示では本文をスクロールできます。">
+            <Grid Margin="8,4" RowDefinitions="44,44,44,Auto,Auto,Auto,Auto" RowSpacing="4">
+              <Grid ColumnDefinitions="90,*,56,88" ColumnSpacing="8">
+                <TextBlock Text="通常モデル" Classes="settings-label" />
+                <ComboBox Grid.Column="1" ItemsSource="{Binding Execution.AvailableModelIds}"
+                          SelectedItem="{Binding Execution.SelectedModelId, Mode=TwoWay}"
+                          HorizontalAlignment="Stretch" MaxDropDownHeight="220" PlaceholderText="下の「Copilot 状態を確認」を押してください"
+                          TabIndex="10" AutomationProperties.AutomationId="ExecutionModel"
+                          AutomationProperties.Name="通常評価で使用するモデル"
+                          ToolTip.Tip="保存済み一覧を復元し、起動時とログイン後に更新します。認証未確認の一覧だけでは実行できません。ここでは認証やAI評価を開始しません。" />
+                <TextBlock Grid.Column="2" Text="並列度" Classes="settings-label" />
+                <ComboBox Grid.Column="3" ItemsSource="{Binding Execution.ConcurrencyOptions}"
+                          SelectedItem="{Binding Execution.MaxConcurrency, Mode=TwoWay}"
+                          HorizontalAlignment="Stretch" TabIndex="11"
+                          AutomationProperties.AutomationId="ExecutionConcurrency"
+                          AutomationProperties.Name="最大並列度"
+                          ToolTip.Tip="次回実行の最大並列度を1～16から選択します。実行中の条件は変わりません。" />
+              </Grid>
+              <Grid Grid.Row="1" ColumnDefinitions="90,*" ColumnSpacing="8">
+                <TextBlock Text="指定出力先" Classes="settings-label" />
+                <TextBox Grid.Column="1" Text="{Binding Execution.OutputDirectoryOverride, Mode=TwoWay}"
+                         PlaceholderText="空欄なら入力ファイル隣接の result" TabIndex="12"
+                         AutomationProperties.AutomationId="ExecutionOutputDirectory"
+                         AutomationProperties.Name="明示出力先（空欄で既定に戻す）"
+                         ToolTip.Tip="絶対パスを指定します。空欄は未指定として保存し、自動算出した出力先は保存しません。" />
+              </Grid>
+              <Grid Grid.Row="2" ColumnDefinitions="90,*" ColumnSpacing="8">
+                <TextBlock Text="実効出力先" Classes="settings-label" />
+                <TextBox Grid.Column="1" Text="{Binding Execution.OutputDirectory, Mode=OneWay}"
+                         IsReadOnly="True" PlaceholderText="入力後に決定" TabIndex="13"
+                         AutomationProperties.AutomationId="SettingsEffectiveOutputDirectory"
+                         AutomationProperties.Name="次回の実効出力先・読取専用"
+                         ToolTip.Tip="現在の指定と入力から決まる出力先です。全文を選択・コピーできます。この表示を指定値として保存しません。" />
+              </Grid>
+              <StackPanel Grid.Row="6" Spacing="4">
+                <Grid ColumnDefinitions="90,*,100,*,104" ColumnSpacing="8">
+                  <TextBlock Text="思考レベル" Classes="settings-label" />
+                  <ComboBox Grid.Column="1" ItemsSource="{Binding Execution.ReasoningEffortOptions}"
+                            SelectedItem="{Binding Execution.SelectedReasoningEffortOption, Mode=TwoWay}"
+                            IsEnabled="{Binding Execution.CanSelectReasoningEffort}"
+                            PlaceholderText="{Binding Execution.SelectedModelReasoningEffortText}"
+                            HorizontalAlignment="Stretch" TabIndex="21"
+                            AutomationProperties.AutomationId="ExecutionReasoningEffort"
+                            AutomationProperties.Name="通常・参照・固有評価で使用する思考レベル"
+                            ToolTip.Tip="選択モデルが対応する値だけを表示します。高い思考レベルでは使用量が変わり得ます。変更は次回実行用です。" />
+                  <TextBlock Grid.Column="2" Text="Context Size" Classes="settings-label" />
+                  <ComboBox Grid.Column="3" ItemsSource="{Binding Execution.ContextSizeOptions}"
+                            SelectedItem="{Binding Execution.SelectedContextSizeOption, Mode=TwoWay}"
+                            IsEnabled="{Binding Execution.CanSelectContextSize}"
+                            PlaceholderText="{Binding Execution.SelectedContextSizeText}"
+                            HorizontalAlignment="Stretch" TabIndex="22"
+                            AutomationProperties.AutomationId="ExecutionContextSize"
+                            AutomationProperties.Name="通常・参照・固有評価で使用するコンテキストサイズ"
+                            ToolTip.Tip="SDKが公開した入力promptのtoken枠です。出力込みの総contextとは異なります。拡張では使用量が変わり得ます。変更だけではAIを呼びません。" />
+                  <Button Grid.Column="4" Content="既定に戻す" Command="{Binding Execution.ResetModelOptionsCommand}"
+                          TabIndex="23" AutomationProperties.AutomationId="ExecutionResetModelOptions"
+                          AutomationProperties.Name="選択モデルの思考レベルとコンテキストサイズを既定に戻す"
+                          ToolTip.Tip="現在モデルの明示希望だけを取り消します。対応がなくなった場合も未指定へ復旧できます。変更は次回用で、永続化には設定を保存が必要です。" />
+                </Grid>
+              </StackPanel>
+              <StackPanel Grid.Row="3" Spacing="2"
+                          AutomationProperties.AutomationId="SettingsCopilotLoginPanel">
+                <TextBlock Text="{Binding Execution.AuthenticationStatusText}" TextWrapping="Wrap"
+                           AutomationProperties.AutomationId="SettingsCopilotAuthenticationStatus" />
+                <WrapPanel ItemSpacing="4" LineSpacing="4">
+                  <Button Content="Copilot 状態を確認" Command="{Binding Execution.CheckAuthenticationCommand}" TabIndex="14"
+                          AutomationProperties.AutomationId="SettingsCheckCopilotAuthentication"
+                          AutomationProperties.Name="既存 Copilot CLI login と model を確認"
+                          ToolTip.Tip="既存loginと利用可能モデルを確認します。ログインや定量化は開始しません。" />
+                  <Button Content="GitHubにログイン" Command="{Binding Execution.LoginCommand}" TabIndex="15"
+                          AutomationProperties.AutomationId="SettingsStartCopilotLogin"
+                          AutomationProperties.Name="GitHubにログイン"
+                          ToolTip.Tip="同梱 CLI を直接起動し、別のブラウザーで認証します。このアプリはパスワードやトークンを取得・保存しません。完了後にモデル一覧を自動更新します。" />
+                  <Button Content="ログインを取り消す" Command="{Binding Execution.CancelLoginCommand}" TabIndex="16"
+                          AutomationProperties.AutomationId="SettingsCancelCopilotLogin"
+                          AutomationProperties.Name="ログインを取り消す"
+                          ToolTip.Tip="このアプリが所有するログイン処理だけを取り消します。外部のCLIやブラウザーは終了しません。" />
+                </WrapPanel>
+                <TextBlock Text="{Binding Execution.LoginStatusText}" TextWrapping="Wrap"
+                           AutomationProperties.AutomationId="SettingsCopilotLoginStatus" />
+              </StackPanel>
+              <Grid Grid.Row="4" ColumnDefinitions="90,*,84,*,84,60" ColumnSpacing="8"
+                    IsEnabled="{Binding CanEditDefinition, FallbackValue=False}"
+                    AutomationProperties.AutomationId="SettingsDefinitionFields">
+                  <TextBlock Text="採点定義名" Classes="settings-label" />
+                  <TextBox Grid.Column="1" Text="{Binding Design.DefinitionName, Mode=TwoWay}" TabIndex="17"
+                           AutomationProperties.AutomationId="DesignDefinitionName"
+                           AutomationProperties.Name="採点定義の名前"
+                           ToolTip.Tip="現在の採点定義の名前です。共通の実行設定ではなくDesignのdraftを編集します。" />
+                  <TextBlock Grid.Column="2" Text="定義revision" Classes="settings-label" />
+                  <TextBox Grid.Column="3" Text="{Binding Design.Revision, Mode=TwoWay}" TabIndex="18"
+                           AutomationProperties.AutomationId="DesignRevision"
+                           AutomationProperties.Name="採点定義のrevision"
+                           ToolTip.Tip="採点定義の改訂を識別する値です。アプリや設定ファイル形式のバージョンではありません。" />
+                  <TextBlock Grid.Column="4" Text="丸めの桁数" Classes="settings-label" />
+                  <TextBox Grid.Column="5" Text="{Binding Design.RoundingDigits, Mode=TwoWay}" TabIndex="19"
+                           AutomationProperties.AutomationId="DesignRoundingDigits"
+                           AutomationProperties.Name="採点定義の丸め桁数"
+                           ToolTip.Tip="採点定義で用いる小数部の丸め桁数を入力します。既存の定義検証で有効性を確認します。" />
+              </Grid>
+              <TextBlock Grid.Row="5" Text="{Binding DefinitionAvailabilityText}"
+                         IsVisible="{Binding !CanEditDefinition, FallbackValue=True}" TextWrapping="Wrap"
+                         AutomationProperties.AutomationId="SettingsCommonDefinitionAvailability"
+                         AutomationProperties.Name="{Binding DefinitionAvailabilityText}" />
+            </Grid>
+          </ScrollViewer>
+        </TabItem>
+        <TabItem Header="保存定義" TabIndex="1"
+                 AutomationProperties.AutomationId="SettingsStoredDefinitionTab"
+                 AutomationProperties.Name="設定ファイルと保存定義"
+                 ToolTip.Tip="保存場所と保存した定義を確認し、現在の入力へ明示適用します。">
+          <Grid Margin="8,4" RowDefinitions="Auto,44,*,Auto,44,Auto" RowSpacing="4">
+            <TextBlock Text="設定ファイルの保存先" Classes="settings-label" />
+            <TextBox Grid.Row="1" Text="{Binding FilePath, Mode=OneWay}" IsReadOnly="True"
+                     PlaceholderText="保存先は構成されていません" TabIndex="10"
+                     AutomationProperties.AutomationId="SettingsFilePath"
+                     AutomationProperties.Name="設定ファイルの場所・読取専用"
+                     ToolTip.Tip="明示保存で使用するsetting.txtの場所です。全文を選択・コピーできます。" />
+            <TextBox Grid.Row="2" Text="{Binding StoredDefinitionSummary, Mode=OneWay}"
+                     IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" VerticalAlignment="Stretch"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     TabIndex="11" AutomationProperties.AutomationId="StoredDefinitionSummary"
+                     AutomationProperties.Name="保存した採点定義の概要・読取専用"
+                     ToolTip.Tip="保存定義のsheet・設問数・行範囲です。設定の読込だけでは現在の入力へ適用しません。" />
+            <TextBlock Grid.Row="3" Text="{Binding ApplyAvailabilityText}" TextWrapping="Wrap"
+                       AutomationProperties.AutomationId="SettingsApplyAvailability"
+                       AutomationProperties.Name="{Binding ApplyAvailabilityText}" />
+            <Button Grid.Row="4" Content="現在の入力に適用" Command="{Binding ApplySavedDefinitionCommand}"
+                    IsEnabled="{Binding CanApplySavedDefinition, FallbackValue=False}"
+                    HorizontalAlignment="Left" MinWidth="144" TabIndex="12"
+                    AutomationProperties.AutomationId="SettingsApplySavedDefinition"
+                    AutomationProperties.Name="保存した採点定義を現在の入力に適用"
+                    ToolTip.Tip="現在のExcelに対してsheet・行・列を検証し、成功時だけInputとDesignへ反映します。ファイル保存やAI評価は行いません。" />
+            <TextBlock Grid.Row="5" Text="{Binding ApplyStatusText}" TextWrapping="Wrap"
+                       AutomationProperties.AutomationId="SettingsApplyStatus"
+                       AutomationProperties.Name="保存定義の適用状態" />
+          </Grid>
+        </TabItem>
+        <TabItem Header="診断" TabIndex="2"
+                 AutomationProperties.AutomationId="SettingsRuntimeTab"
+                 AutomationProperties.Name="保存対象外のruntime診断"
+                 ToolTip.Tip="既に取得されている認証・runtime情報を読むだけです。新たな確認処理は開始しません。">
+          <Grid Margin="8,4" RowDefinitions="Auto,64,Auto,*,Auto,44" RowSpacing="4">
+            <TextBlock Text="認証状態（読取専用・保存対象外）" Classes="settings-label" />
+            <TextBox Grid.Row="1" Text="{Binding Execution.AuthenticationStatusText, Mode=OneWay}"
+                     IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" TabIndex="10"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     AutomationProperties.AutomationId="SettingsAuthenticationStatus"
+                     AutomationProperties.Name="認証状態・読取専用・保存対象外"
+                     ToolTip.Tip="起動時・ログイン後・手動確認の最新の状態です。再確認とログインは実行画面で行います。" />
+            <TextBlock Grid.Row="2" Text="runtime情報（読取専用・保存対象外）" Classes="settings-label" />
+            <TextBox Grid.Row="3" Text="{Binding Execution.RuntimeIdentityText, Mode=OneWay}"
+                     IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" VerticalAlignment="Stretch" TabIndex="11"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     AutomationProperties.AutomationId="SettingsRuntimeIdentity"
+                     AutomationProperties.Name="runtime情報・読取専用・保存対象外"
+                     ToolTip.Tip="既存VMが公開するCLIとSDKの情報です。credentialやruntimeのパスを取得・保存しません。" />
+            <TextBlock Grid.Row="4" Text="希望モデルID（保存対象・利用可否とは別）" Classes="settings-label" />
+            <TextBox Grid.Row="5" Text="{Binding Execution.PreferredModelId, Mode=OneWay}"
+                     IsReadOnly="True" PlaceholderText="希望モデルは未指定" TabIndex="12"
+                     AutomationProperties.AutomationId="SettingsPreferredModelId"
+                     AutomationProperties.Name="希望モデルID・読取専用"
+                     ToolTip.Tip="保存・明示選択された希望IDです。利用できない場合も勝手に別モデルへ変更せず、共通設定での選択を待ちます。" />
+          </Grid>
+        </TabItem>
+        <!-- FR-065: persona selection is saved at once to layout.json (NFR-UX-004), never to setting.txt. -->
+        <TabItem Header="ペルソナ" TabIndex="3"
+                 AutomationProperties.AutomationId="SettingsPersonaTab"
+                 AutomationProperties.Name="ペルソナとパネル配置の保存"
+                 ToolTip.Tip="自分に当てはまるペルソナを選ぶと、各画面の既定のパネル配置が変わります。選択はすぐに保存されます。">
+          <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto"
+                        TabIndex="1" KeyboardNavigation.TabNavigation="Local"
+                        AutomationProperties.AutomationId="SettingsPersonaScroll"
+                        AutomationProperties.Name="ペルソナの本文">
+            <StackPanel Margin="8,4" Spacing="4">
+              <TextBlock Text="ペルソナ（複数選択可・1 つ以上）" Classes="settings-label" />
+              <CheckBox Content="P-01 採点担当教員" TabIndex="10"
+                        IsChecked="{Binding Workspace.IsGraderSelected, Mode=TwoWay}"
+                        IsEnabled="{Binding Workspace.CanChangeGrader}"
+                        AutomationProperties.AutomationId="SettingsPersonaP01"
+                        AutomationProperties.Name="ペルソナ P-01 採点担当教員"
+                        ToolTip.Tip="結果画面の既定: 左に結果一覧、中央に詳細、右に図。最後の 1 つは外せません。" />
+              <CheckBox Content="P-02 評価設計担当" TabIndex="11"
+                        IsChecked="{Binding Workspace.IsAssessmentDesignerSelected, Mode=TwoWay}"
+                        IsEnabled="{Binding Workspace.CanChangeAssessmentDesigner}"
+                        AutomationProperties.AutomationId="SettingsPersonaP02"
+                        AutomationProperties.Name="ペルソナ P-02 評価設計担当"
+                        ToolTip.Tip="採点設計画面の既定: 左に採点設計フォーム、右に配点構成。最後の 1 つは外せません。" />
+              <CheckBox Content="P-03 保守エンジニア" TabIndex="12"
+                        IsChecked="{Binding Workspace.IsMaintenanceEngineerSelected, Mode=TwoWay}"
+                        IsEnabled="{Binding Workspace.CanChangeMaintenanceEngineer}"
+                        AutomationProperties.AutomationId="SettingsPersonaP03"
+                        AutomationProperties.Name="ペルソナ P-03 保守エンジニア"
+                        ToolTip.Tip="実行・結果画面の既定: 上に進捗と結果、下にコスト・ログ。最後の 1 つは外せません。" />
+              <TextBlock TextWrapping="Wrap"
+                         Text="複数選ぶと、画面ごとに P-01、P-02、P-03 の順で既定の配置を持つ最初のペルソナを使います。ペルソナは表示の便宜のためで、アクセス制御ではありません。自分で変えた配置は「既定のレイアウトに戻す」で既定に戻せます。" />
+              <TextBlock Text="{Binding Workspace.StatusText}" TextWrapping="Wrap"
+                         AutomationProperties.AutomationId="SettingsLayoutStatus" />
+              <TextBox Text="{Binding Workspace.FilePath, Mode=OneWay}" IsReadOnly="True" TabIndex="13"
+                       PlaceholderText="レイアウトの保存先は構成されていません"
+                       AutomationProperties.AutomationId="SettingsLayoutFilePath"
+                       AutomationProperties.Name="layout.json の場所・読取専用"
+                       ToolTip.Tip="パネル配置とペルソナだけを保存するファイルです。setting.txt とは別で、学生の情報・パス・回答・Prompt は入れません。" />
+            </StackPanel>
+          </ScrollViewer>
+        </TabItem>
+      </TabControl>
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <!-- At 950 x 450: categories 44 + gaps 16 + body 346 + footer 44.
+       Warning, workflow navigation, and focus restoration belong to T23's host. -->
+  <Grid RowDefinitions="44,*,44" RowSpacing="8" KeyboardNavigation.TabNavigation="Local">
+    <Grid x:Name="SettingsCategoryBar" ColumnDefinitions="*,*,*,*,*" ColumnSpacing="4"
+          TabIndex="0" KeyboardNavigation.TabNavigation="Local"
+          AutomationProperties.AutomationId="SettingsCategories">
+      <Button Classes="settings-category" Content="共通" Command="{Binding SelectCategoryCommand}"
+              CommandParameter="{x:Static viewModels:SettingsCategory.Common}" TabIndex="0"
+              AutomationProperties.AutomationId="SettingsCategoryCommon" AutomationProperties.Name="共通設定"
+              ToolTip.Tip="共通の実行設定、定義情報、保存定義、診断を表示します。" />
+      <Button Grid.Column="1" Classes="settings-category" Content="入力詳細" Command="{Binding SelectCategoryCommand}"
+              CommandParameter="{x:Static viewModels:SettingsCategory.Mapping}" TabIndex="1"
+              AutomationProperties.AutomationId="SettingsCategoryMapping" AutomationProperties.Name="入力詳細の設定"
+              ToolTip.Tip="Inputの設問と列mappingの詳細を編集します。" />
+      <Button Grid.Column="2" Classes="settings-category" Content="通常評価" Command="{Binding SelectCategoryCommand}"
+              CommandParameter="{x:Static viewModels:SettingsCategory.Evaluation}" TabIndex="2"
+              AutomationProperties.AutomationId="SettingsCategoryEvaluation" AutomationProperties.Name="通常評価の設定"
+              ToolTip.Tip="Designの評価方法・評価項目・Promptを編集します。" />
+      <Button Grid.Column="3" Classes="settings-category" Content="固有評価" Command="{Binding SelectCategoryCommand}"
+              CommandParameter="{x:Static viewModels:SettingsCategory.Special}" TabIndex="3"
+              AutomationProperties.AutomationId="SettingsCategorySpecial" AutomationProperties.Name="固有評価の設定"
+              ToolTip.Tip="Designの固有項目・対象列・Promptを編集します。" />
+      <Button Grid.Column="4" Classes="settings-category" Content="読込Prompt" Command="{Binding SelectCategoryCommand}"
+              CommandParameter="{x:Static viewModels:SettingsCategory.ImportedPrompts}" TabIndex="4"
+              AutomationProperties.AutomationId="SettingsCategoryImportedPrompts" AutomationProperties.Name="読込Promptの設定"
+              ToolTip.Tip="入力前でもPromptの原文を閲覧できます。適用は入力と対象を確認した後の明示操作です。" />
+    </Grid>
+
+    <Grid Grid.Row="1" TabIndex="1" KeyboardNavigation.TabNavigation="Local">
+      <ScrollViewer x:Name="SettingsBodyScroll"
+                    HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                    SizeChanged="HandleBodySizeChanged"
+                    AutomationProperties.AutomationId="SettingsBodyScroll"
+                    AutomationProperties.Name="設定本文（狭い表示ではスクロール）"
+                    ToolTip.Tip="通常サイズは本文を有限領域へ配置します。幅720・高さ340 DIP未満の本文領域ではスクロールして全操作へ到達できます。">
+        <ContentControl x:Name="CurrentSettingsContent"
+                        HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+                        KeyboardNavigation.TabNavigation="Local"
+                        AutomationProperties.AutomationId="CurrentSettingsContent"
+                        AutomationProperties.Name="選択中の設定カテゴリの内容" />
+      </ScrollViewer>
+    </Grid>
+
+    <Grid x:Name="SettingsFooter" Grid.Row="2" ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8"
+          TabIndex="2" KeyboardNavigation.TabNavigation="Local" AutomationProperties.AutomationId="SettingsFooter">
+      <Button x:Name="SettingsRequestClose" Content="設定から戻る" Command="{Binding RequestCloseCommand}"
+              MinWidth="144" TabIndex="0" AutomationProperties.AutomationId="SettingsRequestClose"
+              AutomationProperties.Name="設定から元のステップへ戻る"
+              ToolTip.Tip="編集内容を保って元のステップへ戻ります。ファイルへ自動保存せず、AIも実行しません。" />
+             <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+        <TextBlock x:Name="SettingsStatus" Text="{Binding StatusText}" TextTrimming="CharacterEllipsis"
+                    AutomationProperties.AutomationId="SettingsStatus" AutomationProperties.Name="{Binding StatusText}"
+                    ToolTip.Tip="{Binding StatusText}" />
+        <TextBlock Text="{Binding ModelCatalogPersistenceText}" TextTrimming="CharacterEllipsis"
+             AutomationProperties.AutomationId="SettingsModelCatalogStatus"
+             AutomationProperties.Name="{Binding ModelCatalogPersistenceText}"
+             ToolTip.Tip="{Binding ModelCatalogPersistenceText}" />
+        <TextBlock x:Name="SettingsDefinitionAvailability" IsVisible="False" TextTrimming="CharacterEllipsis"
+                    Text="{Binding DefinitionAvailabilityText, FallbackValue='設定の編集元がありません。'}"
+                    AutomationProperties.AutomationId="SettingsDefinitionAvailability"
+                    AutomationProperties.Name="{Binding DefinitionAvailabilityText, FallbackValue='設定の編集元がありません。'}"
+                    ToolTip.Tip="{Binding DefinitionAvailabilityText, FallbackValue='設定の編集元がありません。'}" />
+             </StackPanel>
+      <Button x:Name="SettingsLoadRetry" Grid.Column="2" Content="設定を再読込" Click="HandleLoadRetry"
+              IsEnabled="False" MinWidth="120" TabIndex="1"
+              AutomationProperties.AutomationId="SettingsLoadRetry" AutomationProperties.Name="設定ファイルを再読込"
+              ToolTip.Tip="失敗・取消後にも再試行できます。保存済みの共通設定を読み直す明示操作です。現在の定義には自動適用しません。" />
+      <Button x:Name="SettingsSaveButton" Grid.Column="3" Classes="settings-save"
+              Command="{Binding SaveCommand}" IsEnabled="{Binding CanSave, FallbackValue=False}"
+              MinWidth="144" TabIndex="2" IsDefault="False"
+              AutomationProperties.AutomationId="SettingsSave" AutomationProperties.Name="設定をファイルに保存"
+              ToolTip.Tip="共通設定と最新の採点定義をsetting.txtへ明示保存します。定義の設問文・適用済みPrompt等は平文で含まれます。">
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <PathIcon Data="{StaticResource WorkflowSaveIcon}" Width="20" Height="20" />
+          <TextBlock Text="設定を保存" VerticalAlignment="Center" />
+        </StackPanel>
+      </Button>
+    </Grid>
+  </Grid>
+</UserControl>

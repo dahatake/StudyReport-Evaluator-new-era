@@ -1,0 +1,33 @@
+{
+  "format": "study-report-evaluator/unicode-spec/v1",
+  "fixed_seed": 20260831,
+  "synthetic_only": true,
+  "contains_personal_data": false,
+  "normalization_contract": {
+    "form": "NFKC",
+    "line_endings": "CRLF and CR become LF",
+    "whitespace": "one or more Unicode White_Space scalars become one ASCII space and ends are trimmed",
+    "case_folding": false,
+    "punctuation_folding": false,
+    "unit": "Unicode scalar value",
+    "shingle_width": 3,
+    "icu_version": "selected-and-recorded-by-G-16"
+  },
+  "cases": [
+    {"id":"UC-001","question_text":"","learner_prompt":"","expected":{"status":"NOT_APPLICABLE","contains":null,"coverage":null,"multiset_jaccard":null},"requirement_refs":["FR-070","FR-071"]},
+    {"id":"UC-002","question_text":"abc","learner_prompt":"","expected":{"status":"INSUFFICIENT_DATA","contains":null,"coverage":null,"multiset_jaccard":null},"requirement_refs":["FR-070","FR-071"]},
+    {"id":"UC-003","question_text":"ab","learner_prompt":"ab","expected":{"status":"TOO_SHORT","contains":null,"coverage":null,"multiset_jaccard":null},"requirement_refs":["FR-070","FR-071"]},
+    {"id":"UC-004","question_text":"ＡＢＣ","learner_prompt":"ABC","expected":{"normalized_question":"ABC","normalized_prompt":"ABC","status":"COMPUTED","contains":true,"coverage":{"numerator":1,"denominator":1},"multiset_jaccard":{"numerator":1,"denominator":1}},"requirement_refs":["FR-070"]},
+    {"id":"UC-005","question_text":"a b c","learner_prompt":"a\u00a0  b\tc","expected":{"normalized_question":"a b c","normalized_prompt":"a b c","status":"COMPUTED","contains":true,"coverage":{"numerator":3,"denominator":3},"multiset_jaccard":{"numerator":3,"denominator":3}},"requirement_refs":["FR-070"]},
+    {"id":"UC-006","question_text":"a\nb\nc","learner_prompt":"a\r\nb\rc","expected":{"normalized_question":"a b c","normalized_prompt":"a b c","status":"COMPUTED","contains":true,"coverage":{"numerator":3,"denominator":3},"multiset_jaccard":{"numerator":3,"denominator":3}},"requirement_refs":["FR-070"]},
+    {"id":"UC-007","question_text":"éab","learner_prompt":"e\u0301ab","expected":{"normalized_question":"éab","normalized_prompt":"éab","status":"COMPUTED","contains":true,"coverage":{"numerator":1,"denominator":1},"multiset_jaccard":{"numerator":1,"denominator":1}},"requirement_refs":["FR-070"]},
+    {"id":"UC-008","question_text":"😀ab","learner_prompt":"😀ab","expected":{"scalar_count_question":3,"scalar_count_prompt":3,"status":"COMPUTED","contains":true,"coverage":{"numerator":1,"denominator":1},"multiset_jaccard":{"numerator":1,"denominator":1}},"requirement_refs":["FR-070"]},
+    {"id":"UC-009","question_text":"abcde","learner_prompt":"xxabcdexx","expected":{"status":"COMPUTED","contains":true,"coverage":{"numerator":3,"denominator":3},"multiset_jaccard":{"numerator":3,"denominator":7}},"requirement_refs":["FR-070"]},
+    {"id":"UC-010","question_text":"aaaaa","learner_prompt":"aaaa","expected":{"status":"COMPUTED","contains":false,"coverage":{"numerator":2,"denominator":3},"multiset_jaccard":{"numerator":2,"denominator":3}},"requirement_refs":["FR-070"]},
+    {"id":"UC-011","question_text":"abc","learner_prompt":"ABC","expected":{"status":"COMPUTED","contains":false,"coverage":{"numerator":0,"denominator":1},"multiset_jaccard":{"numerator":0,"denominator":2}},"requirement_refs":["FR-070"]},
+    {"id":"UC-012","question_text":"a-b","learner_prompt":"a b","expected":{"status":"COMPUTED","contains":false,"coverage":{"numerator":0,"denominator":1},"multiset_jaccard":{"numerator":0,"denominator":2}},"requirement_refs":["FR-070"]},
+    {"id":"UC-013","question_text":"\u3000\t","learner_prompt":" \r\n","expected":{"normalized_question":"","normalized_prompt":"","status":"NOT_APPLICABLE","contains":null,"coverage":null,"multiset_jaccard":null},"requirement_refs":["FR-070"]},
+    {"id":"UC-014","input_representation":{"kind":"utf16-code-units","question":[55296],"learner_prompt":[97,98,99]},"expected":{"disposition":"reject-invalid-unicode-before-normalization"},"requirement_refs":["ADR-0003","ADR-0009"]},
+    {"id":"UC-015","input_representation":{"kind":"utf16-code-units","value":[65,55357,56832,66]},"expected":{"unicode_scalar_count":3,"utf16_code_unit_count":4},"requirement_refs":["ADR-0009"]}
+  ]
+}

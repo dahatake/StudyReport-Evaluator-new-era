@@ -1,0 +1,282 @@
+{
+  "schema": "urn:study-report-evaluator:test-fixture:metric-spec:v1",
+  "fixture_id": "g14-synthetic-metric-spec-20260831",
+  "fixed_seed": 20260831,
+  "synthetic_only": true,
+  "production_use": "forbidden",
+  "contains_personal_data": false,
+  "g14_status": "BLOCKED_EXT_05",
+  "external_baseline": {
+    "storage": "repository-external",
+    "status": "NOT_PROVIDED",
+    "expected_owner_role": "education-evaluation-owner",
+    "owner_role_reference": "NOT_PROVIDED",
+    "baseline_artifact_reference": "NOT_PROVIDED",
+    "baseline_sha256": "NOT_PROVIDED",
+    "metric_spec_artifact_reference": "NOT_PROVIDED",
+    "metric_spec_sha256": "NOT_PROVIDED",
+    "preregistration_timestamp": "NOT_PROVIDED",
+    "metric_spec_approval_reference": "NOT_PROVIDED",
+    "valid_from_utc": "NOT_PROVIDED",
+    "expires_at_utc": "NOT_PROVIDED",
+    "target_course_scope": "NOT_PROVIDED",
+    "target_language": "NOT_PROVIDED",
+    "eligible_pair_count": "NOT_PROVIDED",
+    "subgroup_policy_reference": "NOT_PROVIDED",
+    "acceptance_thresholds_reference": "NOT_PROVIDED",
+    "completion_rule": "All fields must be externally verified before any real-data metric is calculated."
+  },
+  "preregistration": {
+    "fixture_locked_at_utc": "2026-08-31T00:00:00Z",
+    "unit_of_analysis": {
+      "pair_key": ["synthetic_response_id", "evaluator_id", "rubric_item_id"],
+      "human_reference": "adjudicated-score",
+      "candidate_reference": "same-key-single-trial-score",
+      "join_cardinality": "one-to-one",
+      "duplicate_key_disposition": "invalid-input",
+      "primary_reporting": "metrics-reported-separately-for-each-trial",
+      "pooled_correlated_trials": "forbidden"
+    },
+    "score_scale": {
+      "minimum": 0,
+      "maximum": 4,
+      "categories": [0, 1, 2, 3, 4],
+      "category_order": "ascending",
+      "admissible_values": "integers-only",
+      "adjacent_maximum_absolute_difference": 1,
+      "fixture_only": true
+    },
+    "human_baseline_protocol": {
+      "minimum_independent_raters": 2,
+      "independent_scoring_required": true,
+      "disagreement_resolution": "adjudicated-score",
+      "adjudication_required_before_candidate-comparison": true,
+      "missing_adjudication_disposition": "exclude-and-report-count",
+      "raw_rater_scores_retained_separately": true
+    },
+    "model_runs_per_response": 3,
+    "trial_policy": {
+      "run_ids_required": true,
+      "trial_order_fixed_before_execution": true,
+      "per_trial_candidate_metrics_required": true,
+      "single_value_collapse": "forbidden",
+      "repeat_metrics_use_all-valid-runs-per-unit": true
+    },
+    "missing_value_policy": {
+      "pairwise_metric": "exclude-pair-and-report-count",
+      "subgroup_metric": "report-missing-separately",
+      "repeat_metric": "exclude-unit-unless-all-preregistered-runs-are-valid-and-report-count",
+      "failed_or_not_run_score": "never-coerce-to-zero",
+      "nonfinite_or-out-of-scale-score": "invalid-input",
+      "minimum-eligible-count-not-met": "undefined-and-gate-fail"
+    },
+    "metric_definitions": [
+      {
+        "id": "exact-agreement",
+        "formula": "matching-pairs / eligible-pairs",
+        "eligible_pair": "finite-integer-human-and-candidate-scores-in-preregistered-scale",
+        "zero_denominator": "undefined-and-gate-fail",
+        "direction": "higher-is-better"
+      },
+      {
+        "id": "adjacent-agreement",
+        "formula": "pairs-with-absolute-difference-at-most-adjacent-maximum / eligible-pairs",
+        "boundary": "inclusive",
+        "zero_denominator": "undefined-and-gate-fail",
+        "direction": "higher-is-better"
+      },
+      {
+        "id": "weighted-cohen-kappa",
+        "weighting": "linear",
+        "categories": [0, 1, 2, 3, 4],
+        "disagreement_weight": "abs(human-category-candidate-category) / 4",
+        "observed_weighted_disagreement": "sum(pair-disagreement-weight) / eligible-pairs",
+        "expected_weighted_disagreement": "sum(human-marginal[i] * candidate-marginal[j] * disagreement-weight[i,j])",
+        "formula": "1 - observed-weighted-disagreement / expected-weighted-disagreement",
+        "zero_expected_disagreement": "undefined-and-gate-fail",
+        "direction": "higher-is-better"
+      },
+      {
+        "id": "signed-score-difference-distribution",
+        "difference_order": "candidate-minus-human",
+        "bins": [-4, -3, -2, -1, 0, 1, 2, 3, 4],
+        "formula": "count-of-each-exact-integer-difference-over-eligible-pairs",
+        "zero_denominator": "undefined-and-gate-fail",
+        "direction": "report-only"
+      },
+      {
+        "id": "mean-signed-difference",
+        "difference_order": "candidate-minus-human",
+        "formula": "sum(candidate-minus-human) / eligible-pairs",
+        "zero_denominator": "undefined-and-gate-fail",
+        "direction": "absolute-value-lower-is-better"
+      },
+      {
+        "id": "mean-absolute-difference",
+        "formula": "sum(abs(candidate-minus-human)) / eligible-pairs",
+        "zero_denominator": "undefined-and-gate-fail",
+        "direction": "lower-is-better"
+      },
+      {
+        "id": "spearman-rank-correlation",
+        "tie_rank_method": "average-rank",
+        "correlation": "pearson-correlation-of-human-and-candidate-average-ranks",
+        "minimum_eligible_pairs": 2,
+        "undefined_when": "either-ranked-series-has-zero-variance",
+        "undefined_disposition": "gate-fail",
+        "direction": "higher-is-better"
+      },
+      {
+        "id": "repeat-run-exact-agreement",
+        "formula": "units-with-all-run-scores-equal / eligible-repeat-units",
+        "eligible_repeat_unit": "all-preregistered-run-scores-valid-and-present",
+        "zero_denominator": "undefined-and-gate-fail",
+        "direction": "higher-is-better"
+      },
+      {
+        "id": "repeat-run-maximum-range",
+        "formula": "maximum-over-units(maximum-run-score-minus-minimum-run-score)",
+        "eligible_repeat_unit": "all-preregistered-run-scores-valid-and-present",
+        "zero_denominator": "undefined-and-gate-fail",
+        "direction": "lower-is-better"
+      }
+    ],
+    "test_only_acceptance_thresholds": {
+      "notice": "These values exercise gate logic only and have no educational validity.",
+      "locked_before_synthetic_scores": true,
+      "production_reuse": "forbidden",
+      "all_required": true,
+      "undefined_metric_disposition": "FAIL",
+      "criteria": [
+        {"metric_id": "exact-agreement", "operator": ">=", "value": 0.5},
+        {"metric_id": "adjacent-agreement", "operator": ">=", "value": 0.9},
+        {"metric_id": "weighted-cohen-kappa", "operator": ">=", "value": 0.7},
+        {"metric_id": "mean-signed-difference", "transform": "absolute-value", "operator": "<=", "value": 0.1},
+        {"metric_id": "mean-absolute-difference", "operator": "<=", "value": 0.5},
+        {"metric_id": "spearman-rank-correlation", "operator": ">=", "value": 0.9},
+        {"metric_id": "repeat-run-exact-agreement", "operator": ">=", "value": 0.5},
+        {"metric_id": "repeat-run-maximum-range", "operator": "<=", "value": 1},
+        {"metric_id": "maximum-subgroup-exact-agreement-gap", "operator": "<=", "value": 0.25}
+      ]
+    },
+    "subgroup_policy": {
+      "synthetic_attribute_id": "fixture-group",
+      "values": ["group-a", "group-b"],
+      "minimum_eligible_pairs_per_group": 2,
+      "missing_value": "report-separately",
+      "below-minimum-disposition": "undefined-and-gate-fail",
+      "send_attribute_to_copilot": false,
+      "metrics": ["exact-agreement", "adjacent-agreement", "mean-absolute-difference"],
+      "gap_metric": {
+        "id": "maximum-subgroup-exact-agreement-gap",
+        "formula": "maximum-group-exact-agreement-minus-minimum-group-exact-agreement",
+        "absolute": true
+      }
+    },
+    "counterexample_categories": [
+      {"id": "concise-versus-verbose", "minimum_cases": 1},
+      {"id": "polite-versus-nonstandard", "minimum_cases": 1},
+      {"id": "japanese-orthographic-variation", "minimum_cases": 1},
+      {"id": "prompt-injection", "minimum_cases": 1},
+      {"id": "question-text-copy", "minimum_cases": 1}
+    ],
+    "counterexample_missing_disposition": "gate-fail",
+    "gate_evaluation_scope": {
+      "per_trial_candidate_criteria": "every-preregistered-trial-must-pass-every-candidate-criterion",
+      "per_trial_subgroup_criteria": "every-preregistered-trial-must-pass-every-required-subgroup-criterion",
+      "repeat_criteria": "evaluate-once-across-all-preregistered-runs",
+      "counterexample_coverage": "all-categories-required",
+      "threshold_boundary": "operators-are-inclusive-as-written",
+      "posthoc_threshold_change": "invalidates-preregistration",
+      "any_required_failure": "overall-fail"
+    },
+    "change_invalidation": [
+      "report-definition-hash",
+      "prompt-hash",
+      "rubric-hash",
+      "model-id",
+      "sdk-version",
+      "target-course-scope",
+      "target-language",
+      "score-scale",
+      "metric-spec-hash",
+      "subgroup-policy-hash"
+    ],
+    "similarity_calibration_separation": {
+      "separate_from_scoring_validity": true,
+      "allowed_metric_ids": ["QUESTION_SHINGLE_COVERAGE", "MULTISET_JACCARD"],
+      "product_default_thresholds": false,
+      "external_course_pair_set_required_for_production": true
+    }
+  },
+  "hand_calculated_oracles": {
+    "pairwise_scores": {
+      "pair_ids": ["synthetic-pair-1", "synthetic-pair-2", "synthetic-pair-3", "synthetic-pair-4", "synthetic-pair-5"],
+      "human_rater_a": [0, 1, 2, 3, 4],
+      "human_rater_b": [0, 1, 3, 3, 4],
+      "human": [0, 1, 2, 3, 4],
+      "candidate": [0, 1, 1, 4, 4],
+      "fixture_group": ["group-a", "group-a", "group-b", "group-b", "group-b"],
+      "human_field_semantics": "adjudicated-score"
+    },
+    "expected": {
+      "eligible_pairs": 5,
+      "human_rater_disagreements_before_adjudication": 1,
+      "exact_agreement": {"numerator": 3, "denominator": 5},
+      "adjacent_agreement": {"numerator": 5, "denominator": 5},
+      "weighted_cohen_kappa_linear": {
+        "observed_weighted_disagreement": {"numerator": 1, "denominator": 10},
+        "expected_weighted_disagreement": {"numerator": 11, "denominator": 25},
+        "kappa": {"numerator": 17, "denominator": 22}
+      },
+      "signed_score_difference_distribution": {
+        "-4": 0,
+        "-3": 0,
+        "-2": 0,
+        "-1": 1,
+        "0": 3,
+        "1": 1,
+        "2": 0,
+        "3": 0,
+        "4": 0
+      },
+      "mean_signed_difference": {"numerator": 0, "denominator": 5},
+      "mean_absolute_difference": {"numerator": 2, "denominator": 5},
+      "spearman_rank_correlation": {
+        "expression": "3 / sqrt(10)",
+        "tolerance": 1e-12
+      },
+      "subgroups": {
+        "group-a": {
+          "eligible_pairs": 2,
+          "exact_agreement": {"numerator": 2, "denominator": 2},
+          "adjacent_agreement": {"numerator": 2, "denominator": 2},
+          "mean_absolute_difference": {"numerator": 0, "denominator": 2}
+        },
+        "group-b": {
+          "eligible_pairs": 3,
+          "exact_agreement": {"numerator": 1, "denominator": 3},
+          "adjacent_agreement": {"numerator": 3, "denominator": 3},
+          "mean_absolute_difference": {"numerator": 2, "denominator": 3}
+        },
+        "exact_agreement_gap": {"numerator": 2, "denominator": 3}
+      }
+    },
+    "repeat_runs": [
+      {"unit_id": "synthetic-unit-1", "scores": [2, 2, 2]},
+      {"unit_id": "synthetic-unit-2", "scores": [1, 2, 1]}
+    ],
+    "repeat_expected": {
+      "eligible_units": 2,
+      "exact_agreement": {"numerator": 1, "denominator": 2},
+      "maximum_range": 1
+    },
+    "gate_expected": {
+      "pairwise_metrics_except_subgroup_gap": "PASS",
+      "subgroup_gap": "FAIL",
+      "overall": "FAIL",
+      "real_data_mode": "BLOCKED",
+      "real_data_blocker": "EXT-05"
+    }
+  }
+}

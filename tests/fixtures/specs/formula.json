@@ -1,0 +1,85 @@
+{
+  "format": "study-report-evaluator/formula-spec/v1",
+  "fixed_seed": 20260831,
+  "synthetic_only": true,
+  "contains_personal_data": false,
+  "untrusted_string_invariant": {
+    "cell_type": "inline-string",
+    "cell_formula_node_count": 0,
+    "hyperlink_count": 0,
+    "new_external_relationship_count": 0,
+    "preserve_original_display_value": true
+  },
+  "untrusted_string_cases": [
+    {"id":"FI-001","value":"=SUM(1,2)","danger_marker":"ASCII_EQUALS"},
+    {"id":"FI-002","value":"+1+2","danger_marker":"ASCII_PLUS"},
+    {"id":"FI-003","value":"-1+2","danger_marker":"ASCII_MINUS"},
+    {"id":"FI-004","value":"@SUM(A1:A2)","danger_marker":"ASCII_AT"},
+    {"id":"FI-005","value":"＝SUM(1,2)","danger_marker":"FULLWIDTH_EQUALS"},
+    {"id":"FI-006","value":"＋1+2","danger_marker":"FULLWIDTH_PLUS"},
+    {"id":"FI-007","value":"－1+2","danger_marker":"FULLWIDTH_MINUS"},
+    {"id":"FI-008","value":"＠SUM(A1:A2)","danger_marker":"FULLWIDTH_AT"},
+    {"id":"FI-009","value":"\t=SUM(1,2)","danger_marker":"LEADING_TAB"},
+    {"id":"FI-010","value":"\r=SUM(1,2)","danger_marker":"LEADING_CR"},
+    {"id":"FI-011","value":"\n=SUM(1,2)","danger_marker":"LEADING_LF"},
+    {"id":"FI-012","value":"prefix\n=SUM(1,2)","danger_marker":"AFTER_LF"},
+    {"id":"FI-013","value":"\u00a0=SUM(1,2)","danger_marker":"UNICODE_WHITESPACE_PREFIX"},
+    {"id":"FI-014","value":"\u200b=SUM(1,2)","danger_marker":"U+200B"},
+    {"id":"FI-015","value":"\u200c=SUM(1,2)","danger_marker":"U+200C"},
+    {"id":"FI-016","value":"\u200d=SUM(1,2)","danger_marker":"U+200D"},
+    {"id":"FI-017","value":"\u200e=SUM(1,2)","danger_marker":"U+200E"},
+    {"id":"FI-018","value":"\u200f=SUM(1,2)","danger_marker":"U+200F"},
+    {"id":"FI-019","value":"\u202a=SUM(1,2)","danger_marker":"U+202A"},
+    {"id":"FI-020","value":"\u202b=SUM(1,2)","danger_marker":"U+202B"},
+    {"id":"FI-021","value":"\u202c=SUM(1,2)","danger_marker":"U+202C"},
+    {"id":"FI-022","value":"\u202d=SUM(1,2)","danger_marker":"U+202D"},
+    {"id":"FI-023","value":"\u202e=SUM(1,2)","danger_marker":"U+202E"},
+    {"id":"FI-024","value":"\u2066=SUM(1,2)","danger_marker":"U+2066"},
+    {"id":"FI-025","value":"\u2067=SUM(1,2)","danger_marker":"U+2067"},
+    {"id":"FI-026","value":"\u2068=SUM(1,2)","danger_marker":"U+2068"},
+    {"id":"FI-027","value":"\u2069=SUM(1,2)","danger_marker":"U+2069"},
+    {"id":"FI-028","value":"\u061c=SUM(1,2)","danger_marker":"U+061C"},
+    {"id":"FI-029","value":"\u0301=SUM(1,2)","danger_marker":"LEADING_COMBINING_MARK"},
+    {"id":"FI-030","value":"ordinary synthetic text","danger_marker":null}
+  ],
+  "report_definition_ast_cases": [
+    {
+      "id": "FA-001",
+      "expected": "accept-after-semantic-validation",
+      "ast": {
+        "kind": "function",
+        "name": "ROUND",
+        "arguments": [
+          {
+            "kind": "binary",
+            "operator": "/",
+            "left": {"kind":"function","name":"SUMPRODUCT","arguments":[{"kind":"setting-ref","setting_id":"adopted-score-range"},{"kind":"setting-ref","setting_id":"item-weight-range"}]},
+            "right": {"kind":"function","name":"SUM","arguments":[{"kind":"setting-ref","setting_id":"item-weight-range"}]}
+          },
+          {"kind":"setting-ref","setting_id":"rounding-digits"}
+        ]
+      }
+    },
+    {"id":"FA-002","expected":"reject-schema","ast":{"kind":"function","name":"HYPERLINK","arguments":[{"kind":"empty"}]}},
+    {"id":"FA-003","expected":"reject-schema","ast":{"kind":"setting-ref","setting_id":"source-sheet-range"}},
+    {"id":"FA-004","expected":"reject-schema","ast":{"kind":"binary","operator":"^","left":{"kind":"boolean","value":true},"right":{"kind":"boolean","value":false}}},
+    {"id":"FA-005","expected":"reject-schema","ast":{"kind":"function","name":"SUM","arguments":[]}},
+    {"id":"FA-006","expected":"reject-semantic-arity","ast":{"kind":"function","name":"IF","arguments":[{"kind":"boolean","value":true}]}},
+    {"id":"FA-007","expected":"reject-semantic-type","ast":{"kind":"binary","operator":"/","left":{"kind":"empty"},"right":{"kind":"boolean","value":true}}}
+  ],
+  "generated_formula_validation_cases": [
+    {"id":"FV-001","construction":"allowlisted AST serialized to 8191 characters","expected":"accept","requirement_refs":["FR-085","ADR-0004"]},
+    {"id":"FV-002","construction":"allowlisted AST serialized to 8192 characters","expected":"reject","requirement_refs":["FR-085","ADR-0004"]},
+    {"id":"FV-003","formula":"[external.xlsx]Sheet1!A1","expected":"reject-external-reference","requirement_refs":["FR-088"]},
+    {"id":"FV-004","formula":"DDE(server,topic)","expected":"reject-dde","requirement_refs":["FR-088"]},
+    {"id":"FV-005","formula":"HYPERLINK(\"https://invalid.example\",\"x\")","expected":"reject-forbidden-function","requirement_refs":["FR-085","FR-088"]},
+    {"id":"FV-006","formula":"WEBSERVICE(\"https://invalid.example\")","expected":"reject-forbidden-function","requirement_refs":["FR-085","FR-088"]},
+    {"id":"FV-007","formula":"INDIRECT(\"A1\")","expected":"reject-forbidden-function","requirement_refs":["FR-085"]},
+    {"id":"FV-008","formula":"Sheet1:Sheet3!A1","expected":"reject-3d-reference","requirement_refs":["ADR-0004"]},
+    {"id":"FV-009","formula":"SUM(A:A)","expected":"reject-whole-column-reference","requirement_refs":["ADR-0004"]},
+    {"id":"FV-010","formula":"Original!A1","expected":"reject-source-sheet-reference","requirement_refs":["ADR-0004"]},
+    {"id":"FV-011","formula":"ApprovedName","expected":"reject-defined-name","requirement_refs":["ADR-0004"]},
+    {"id":"FV-012","graph_mutation":"add an edge from an adopted-score node to a similarity node","expected":"reject-similarity-to-scoring-connection","requirement_refs":["FR-074","ADR-0004"]},
+    {"id":"FV-013","graph_mutation":"add a self-edge to an app-owned formula node","expected":"reject-cycle","requirement_refs":["FR-085","ADR-0004"]}
+  ]
+}

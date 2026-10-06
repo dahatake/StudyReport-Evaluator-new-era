@@ -1,0 +1,131 @@
+{
+  "schema_version": "1.0",
+  "run_id": "REAL-WORKBOOK-RETAINED-OUTPUT-20260901-0912",
+  "measured_at_utc": "2026-09-01T09:17:30.5084801\u002B00:00",
+  "source_commit": "3f4227e15d725d2a010b4c6a9a94eb78b20b8573",
+  "source_diff_sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+  "environment": {
+    "os_description": "Microsoft Windows 10.0.29648",
+    "os_architecture": "X64",
+    "process_architecture": "X64",
+    "dotnet_version": "10.0.11",
+    "framework_description": ".NET 10.0.11",
+    "logical_processor_count": 20
+  },
+  "privacy_boundary": {
+    "cell_content_in_evidence": false,
+    "header_content_in_evidence": false,
+    "worksheet_names_in_evidence": false,
+    "private_paths_in_evidence": false,
+    "live_ai_invoked": false,
+    "output_workbook_retained": true
+  },
+  "evaluation_semantics": "DETERMINISTIC_RANGE_MIDPOINT_TECHNICAL_TEST_ONLY_NOT_EDUCATIONAL_GRADING",
+  "live_ai": "NOT_RUN_POLICY_REAL_DATA",
+  "input_identity": {
+    "logical_name": "attached-realdata.xlsx",
+    "size_bytes": 470806,
+    "sha256": "73883CE3BBB86B93AF8825C04F596434CF82A2C6309A7F4CC5835AE8F3E542EA",
+    "last_write_time_utc": "2026-09-01T08:10:41.1654016\u002B00:00"
+  },
+  "selection": {
+    "strategy": "all-enabled-application-suggestions",
+    "question_count": 5,
+    "source_sheet_name_sha256": "88D759EA02CEF4B82885C6C620473162757C75522805707C20E2BE76A40A2825",
+    "header_row": 1,
+    "first_data_row": 2,
+    "last_data_row": 531,
+    "suggested_data_row_count": 530,
+    "questions": [
+      {
+        "ordinal": 1,
+        "question_text_sha256": "92AD1DCEF04AB93D10C175980ECAE216849E6CBCE4B0B7C528AF18E67464BE65",
+        "primary_source_column": "F",
+        "supporting_source_columns": [],
+        "evaluator_type": "KnowledgeCoverage"
+      },
+      {
+        "ordinal": 2,
+        "question_text_sha256": "08892ECECA263A3D74831227397706BBFEF2AE368B164A77802651868AD548B3",
+        "primary_source_column": "G",
+        "supporting_source_columns": [],
+        "evaluator_type": "CustomPrompt"
+      },
+      {
+        "ordinal": 3,
+        "question_text_sha256": "71F69A5044AB643182149775E3AF79294F3EB4617B735CFFC9225C414659B849",
+        "primary_source_column": "H",
+        "supporting_source_columns": [],
+        "evaluator_type": "KnowledgeCoverage"
+      },
+      {
+        "ordinal": 4,
+        "question_text_sha256": "65C0C5771EAF2B02525BEE80261726E9D5E6C8EA01F04F957C02372DA4161027",
+        "primary_source_column": "I",
+        "supporting_source_columns": [],
+        "evaluator_type": "KnowledgeCoverage"
+      },
+      {
+        "ordinal": 5,
+        "question_text_sha256": "02C7014FE986004024651CFF96CC68127629B819A60B4B28CF1AC6ED79DF88D6",
+        "primary_source_column": "J",
+        "supporting_source_columns": [
+          "K"
+        ],
+        "evaluator_type": "CustomPrompt"
+      }
+    ]
+  },
+  "local_application_run": {
+    "network_invoked": false,
+    "model_identity": "local-deterministic-midpoint-no-network-not-for-grading",
+    "max_concurrency_requested": 3,
+    "maximum_observed_concurrency": 2,
+    "planned_evaluation_count": 2650,
+    "completed_evaluation_count": 2650,
+    "succeeded_count": 2031,
+    "empty_count": 619,
+    "failure_count": 0,
+    "cancelled_count": 0,
+    "status": "SUCCESS",
+    "elapsed_seconds": 78.490060,
+    "definition_hash_valid": true,
+    "progress_monotonic": true,
+    "progress_final_in_flight": 0,
+    "usage_observed_unit_count": 0
+  },
+  "output": {
+    "logical_name": "20260901-realdata-application-result.xlsx",
+    "copied_byte_count": 470806,
+    "data_row_count": 530,
+    "column_count": 61,
+    "formula_cell_count": 11130,
+    "app_owned_sheet_names": [
+      "Quantification_Config",
+      "Quantification_Results",
+      "Quantification_Run"
+    ],
+    "direct_validation_valid": true,
+    "direct_validation_error_count": 0,
+    "atomic_commit_code": "SUCCESS",
+    "temporary_file_removed_after_commit": true,
+    "classification": "StandardXlsx",
+    "worksheet_count": 4,
+    "formula_error_count": 0,
+    "open_xml_schema_error_count": 0,
+    "retained_validation_valid": true,
+    "retained_validation_error_count": 0,
+    "size_bytes": 786819,
+    "sha256": "913F1F0F4E94A8E47A74182C171903DC2EA2038AF48C0AA214DDBD7F83A1CCD3",
+    "elapsed_seconds": 3.314088,
+    "retained": true
+  },
+  "input_unchanged_after_all_operations": true,
+  "cleanup": {
+    "working_file_absent": true,
+    "retained_output_present": true
+  },
+  "input_identity_recheck": "MATCH",
+  "total_elapsed_seconds": 84.371680,
+  "result": "PASS"
+}

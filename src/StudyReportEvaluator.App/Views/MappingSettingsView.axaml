@@ -1,0 +1,281 @@
+<UserControl
+    x:Class="StudyReportEvaluator.App.Views.MappingSettingsView"
+    x:DataType="viewModels:InputViewModel"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="using:Avalonia.Data.Converters"
+    xmlns:viewModels="using:StudyReportEvaluator.App.ViewModels"
+    Background="{DynamicResource AppCanvasBrush}"
+    Foreground="{DynamicResource AppTextBrush}"
+    FontSize="14"
+    KeyboardNavigation.TabNavigation="Local"
+    Loaded="HandleLoaded"
+    AutomationProperties.AutomationId="MappingSettingsView"
+    AutomationProperties.Name="入力詳細の設定">
+  <UserControl.Styles>
+    <Style Selector="Button, ComboBox, CheckBox, TextBox, ListBox">
+      <Setter Property="MinHeight" Value="44" />
+      <Setter Property="MinWidth" Value="44" />
+      <Setter Property="FontSize" Value="14" />
+      <Setter Property="ToolTip.ShowOnDisabled" Value="True" />
+    </Style>
+    <Style Selector="ComboBoxItem, ListBoxItem">
+      <Setter Property="MinHeight" Value="44" />
+      <Setter Property="FontSize" Value="14" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    </Style>
+    <Style Selector="ListBoxItem">
+      <Setter Property="Padding" Value="8,0" />
+    </Style>
+    <Style Selector="Border.mapping-pane">
+      <Setter Property="Padding" Value="8" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
+      <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}" />
+    </Style>
+    <Style Selector="TextBlock">
+      <Setter Property="FontSize" Value="14" />
+    </Style>
+    <Style Selector="TextBlock.label">
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TextBlock.muted">
+      <Setter Property="Foreground" Value="{DynamicResource AppMutedTextBrush}" />
+    </Style>
+    <Style Selector="TextBox:focus-visible, ComboBox:focus-visible, CheckBox:focus-visible, ListBox:focus-visible">
+      <Setter Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
+      <Setter Property="BorderThickness" Value="3" />
+    </Style>
+  </UserControl.Styles>
+
+  <!-- T17 supplies a finite content slot and owns category navigation/focus. -->
+  <Grid x:Name="MappingSettingsContent" Margin="8" RowDefinitions="Auto,*,Auto" RowSpacing="8"
+        KeyboardNavigation.TabNavigation="Continue">
+    <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8">
+      <TextBlock Text="設問" Classes="label" VerticalAlignment="Center" />
+      <ComboBox x:Name="QuestionSelector" Grid.Column="1"
+                ItemsSource="{Binding Questions}"
+                SelectedItem="{Binding SelectedQuestion, Mode=TwoWay}"
+                HorizontalAlignment="Stretch" MaxDropDownHeight="264" PlaceholderText="設問を選択"
+                TabIndex="0" AutomationProperties.AutomationId="MappingSettingsQuestions"
+                AutomationProperties.Name="入力詳細を編集する設問"
+                ToolTip.Tip="入力画面と同じ設問を選びます。全設問へ一覧から直接移動できます。">
+        <ComboBox.ItemsPanel>
+          <ItemsPanelTemplate><VirtualizingStackPanel /></ItemsPanelTemplate>
+        </ComboBox.ItemsPanel>
+        <ComboBox.ItemTemplate>
+          <DataTemplate x:DataType="viewModels:InputQuestionMappingViewModel">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+              <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding DisplayName}" />
+              <TextBlock Grid.Column="1" Text="{Binding PrimarySourceColumn, StringFormat='主列 {0}'}" />
+            </Grid>
+          </DataTemplate>
+        </ComboBox.ItemTemplate>
+      </ComboBox>
+      <Button x:Name="AddQuestionButton" Grid.Column="2" Content="追加" Command="{Binding AddQuestionCommand}"
+              IsEnabled="{Binding ., Converter={x:Static converters:ObjectConverters.IsNotNull}, FallbackValue=False}"
+              TabIndex="1" AutomationProperties.AutomationId="AddInputQuestion"
+              AutomationProperties.Name="質問 mapping を追加"
+              ToolTip.Tip="設問を末尾へ追加します。現在の設問の選択と配点は保持します。" />
+      <Button x:Name="DuplicateQuestionButton" Grid.Column="3" Content="複製" Command="{Binding SelectedQuestion.DuplicateCommand}"
+              IsEnabled="{Binding SelectedQuestion, Converter={x:Static converters:ObjectConverters.IsNotNull}, FallbackValue=False}"
+              TabIndex="2" AutomationProperties.AutomationId="{Binding SelectedQuestion.Id, StringFormat='InputQuestion-{0}-Duplicate', FallbackValue=MappingSettingsDuplicate}"
+              AutomationProperties.Name="選択した設問を複製"
+              ToolTip.Tip="選択した設問と評価項目を新しいIDで直後へ複製します。主回答列の別設問での再使用は可能です。" />
+      <Button x:Name="MoveQuestionUpButton" Grid.Column="4" Content="上へ" Command="{Binding SelectedQuestion.MoveUpCommand}"
+              IsEnabled="{Binding SelectedQuestion, Converter={x:Static converters:ObjectConverters.IsNotNull}, FallbackValue=False}"
+              TabIndex="3" AutomationProperties.AutomationId="{Binding SelectedQuestion.Id, StringFormat='InputQuestion-{0}-MoveUp', FallbackValue=MappingSettingsMoveUp}"
+              AutomationProperties.Name="選択した設問を上へ移動"
+              ToolTip.Tip="設問を1つ前へ移動します。対象のID・内容・配点は変更しません。" />
+      <Button x:Name="MoveQuestionDownButton" Grid.Column="5" Content="下へ" Command="{Binding SelectedQuestion.MoveDownCommand}"
+              IsEnabled="{Binding SelectedQuestion, Converter={x:Static converters:ObjectConverters.IsNotNull}, FallbackValue=False}"
+              TabIndex="4" AutomationProperties.AutomationId="{Binding SelectedQuestion.Id, StringFormat='InputQuestion-{0}-MoveDown', FallbackValue=MappingSettingsMoveDown}"
+              AutomationProperties.Name="選択した設問を下へ移動"
+              ToolTip.Tip="設問を1つ後ろへ移動します。対象のID・内容・配点は変更しません。" />
+      <Button x:Name="DeleteQuestionButton" Grid.Column="6" Content="削除" Command="{Binding SelectedQuestion.DeleteCommand}"
+              IsEnabled="{Binding SelectedQuestion, Converter={x:Static converters:ObjectConverters.IsNotNull}, FallbackValue=False}"
+              TabIndex="5" AutomationProperties.AutomationId="{Binding SelectedQuestion.Id, StringFormat='InputQuestion-{0}-Delete', FallbackValue=MappingSettingsDelete}"
+              AutomationProperties.Name="選択した設問を削除"
+              ToolTip.Tip="選択した設問を削除し、残っている隣の設問へ移ります。配点の自動変更は行いません。" />
+    </Grid>
+
+    <Grid Grid.Row="1" ColumnDefinitions="*,*,*" ColumnSpacing="12">
+      <Border Classes="mapping-pane">
+        <Grid>
+          <TextBlock x:Name="NoQuestionMessage"
+                     Text="編集対象の設問がありません。入力画面でExcelを読み込み、設問を選ぶか「追加」で作成してください。"
+                     IsVisible="{Binding SelectedQuestion, Converter={x:Static converters:ObjectConverters.IsNull}, FallbackValue=True}"
+                     TextWrapping="Wrap" VerticalAlignment="Center"
+                     AutomationProperties.AutomationId="MappingSettingsNoQuestion"
+                     AutomationProperties.Name="入力詳細の編集対象がありません" />
+          <Grid RowDefinitions="Auto,Auto,Auto,*" RowSpacing="4"
+                IsVisible="{Binding SelectedQuestion, Converter={x:Static converters:ObjectConverters.IsNotNull}, FallbackValue=False}"
+                IsEnabled="{Binding SelectedQuestion, Converter={x:Static converters:ObjectConverters.IsNotNull}, FallbackValue=False}">
+            <Grid RowDefinitions="Auto,44" RowSpacing="4">
+              <TextBlock Text="設問名" Classes="label" />
+              <TextBox x:Name="QuestionNameEditor" Grid.Row="1" Text="{Binding SelectedQuestion.DisplayName, Mode=TwoWay}"
+                       TabIndex="6" AutomationProperties.AutomationId="{Binding SelectedQuestion.NameAutomationId, FallbackValue=MappingSettingsName}"
+                       AutomationProperties.Name="質問の表示名"
+                       ToolTip.Tip="表示する設問名を編集します。IDは名前の変更や並替えでは変わりません。" />
+            </Grid>
+            <StackPanel Grid.Row="1">
+              <TextBlock x:Name="PrimaryColumnSummary" Text="{Binding SelectedQuestion.PrimarySourceColumn, StringFormat='主回答列: {0}（主画面で変更）'}"
+                         TextWrapping="Wrap" Classes="muted"
+                         AutomationProperties.AutomationId="MappingSettingsPrimarySummary"
+                         AutomationProperties.Name="主回答列の現在値・読取専用" />
+              <TextBlock Text="有効（主画面で変更）" IsVisible="{Binding SelectedQuestion.Enabled}"
+                         Classes="muted" AutomationProperties.AutomationId="MappingSettingsQuestionEnabled" />
+              <TextBlock Text="無効（主画面で変更）" IsVisible="{Binding !SelectedQuestion.Enabled}"
+                         Classes="muted" AutomationProperties.AutomationId="MappingSettingsQuestionDisabled" />
+            </StackPanel>
+            <TextBlock Grid.Row="2" Text="設問文（全文・読取専用）" Classes="label" />
+            <TextBox x:Name="QuestionTextEditor" Grid.Row="3" Text="{Binding SelectedQuestion.QuestionText, Mode=OneWay}"
+                     IsReadOnly="True" AcceptsReturn="True" AcceptsTab="False" TextWrapping="Wrap" VerticalAlignment="Stretch"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     TabIndex="7" AutomationProperties.AutomationId="{Binding SelectedQuestion.Id, StringFormat='InputQuestion-{0}-Text', FallbackValue=MappingSettingsText}"
+                     AutomationProperties.Name="設問文の全文・読取専用"
+                     ToolTip.Tip="設問文の全文を確認・コピーできます。手動編集と主回答列の変更は入力画面で行います。Ctrl+Endで末尾へ移動できます。" />
+          </Grid>
+        </Grid>
+      </Border>
+
+      <Border Grid.Column="1" Classes="mapping-pane"
+              IsEnabled="{Binding SelectedQuestion, Converter={x:Static converters:ObjectConverters.IsNotNull}, FallbackValue=False}">
+        <Grid RowDefinitions="Auto,*,Auto,64" RowSpacing="4">
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="4">
+            <TextBlock Text="補助列" Classes="label" VerticalAlignment="Center" />
+            <CheckBox x:Name="IncludeSupportingColumnCheckBox" Grid.Column="1" Content="補助に含める"
+                      IsChecked="{Binding #SupportingColumnList.((viewModels:SupportingColumnSelectionViewModel)SelectedItem).IsSelected, Mode=TwoWay, FallbackValue=False}"
+                      IsEnabled="False"
+                      TabIndex="9" AutomationProperties.Name="選択した列を補助列に追加または解除"
+                      ToolTip.Tip="一覧で列を選び、補助に含めるか切り替えます。同じ設問の主回答列は選べません。">
+              <AutomationProperties.AutomationId>
+                <MultiBinding StringFormat="InputQuestion-{0}-Support-{1}">
+                  <Binding Path="SelectedQuestion.Id" />
+                  <Binding Path="#SupportingColumnList.((viewModels:SupportingColumnSelectionViewModel)SelectedItem).ColumnName" />
+                </MultiBinding>
+              </AutomationProperties.AutomationId>
+            </CheckBox>
+          </Grid>
+          <ListBox x:Name="SupportingColumnList" Grid.Row="1"
+                   ItemsSource="{Binding SelectedQuestion.SupportingColumns}" SelectionMode="Single"
+                   SelectionChanged="HandleSupportingSelectionChanged"
+                   ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                   TabIndex="8" AutomationProperties.AutomationId="{Binding SelectedQuestion.SupportingAutomationId, FallbackValue=MappingSettingsSupporting}"
+                   AutomationProperties.Name="この質問の補助列一覧"
+                   ToolTip.Tip="全列を表示しています。方向キーやHome・Endで列を選び、Tabで「補助に含める」へ進めます。">
+            <ListBox.ItemsPanel>
+              <ItemsPanelTemplate><VirtualizingStackPanel /></ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="viewModels:SupportingColumnSelectionViewModel">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" ToolTip.Tip="{Binding DisplayText}"
+                      AutomationProperties.Name="{Binding DisplayText}">
+                  <TextBlock Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                  <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="選択済み" IsVisible="{Binding IsSelected}" />
+                    <TextBlock Text="主回答" IsVisible="{Binding !CanSelect}" />
+                  </StackPanel>
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+          <TextBlock Grid.Row="2" Text="選択列の見出し（全文）" Classes="label" />
+          <TextBox x:Name="AvailableColumnTitle" Grid.Row="3"
+                   Text="{Binding #SupportingColumnList.((viewModels:SupportingColumnSelectionViewModel)SelectedItem).DisplayText, Mode=OneWay}"
+                   IsReadOnly="True" AcceptsReturn="True" AcceptsTab="False" TextWrapping="Wrap"
+                   PlaceholderText="一覧で列を選択してください。" VerticalAlignment="Stretch"
+                   ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                   TabIndex="10" AutomationProperties.AutomationId="MappingSettingsAvailableColumnTitle"
+                   AutomationProperties.Name="選択した補助列候補の列名と実見出し全文・読取専用"
+                   ToolTip.Tip="読込済みの質問行の実際の見出しです。空の見出しは列名だけを表示します。Ctrl+Endで末尾へ移動できます。" />
+        </Grid>
+      </Border>
+
+      <Border Grid.Column="2" Classes="mapping-pane">
+        <Grid RowDefinitions="Auto,44,*,Auto,44" RowSpacing="4">
+          <TextBlock Text="列候補の詳細" Classes="label" />
+          <ComboBox x:Name="CandidateSelector" Grid.Row="1" ItemsSource="{Binding MappingSuggestions}"
+                    SelectionChanged="HandleCandidateSelectionChanged" MaxDropDownHeight="264"
+                    HorizontalAlignment="Stretch" PlaceholderText="列候補を選択" TabIndex="11"
+                    AutomationProperties.AutomationId="InputMappingSuggestions"
+                    AutomationProperties.Name="X-02 列 mapping 候補"
+                    ToolTip.Tip="列候補を選んで提案内容を確認します。選択だけではmappingを変更しません。">
+            <ComboBox.ItemsPanel>
+              <ItemsPanelTemplate><VirtualizingStackPanel /></ItemsPanelTemplate>
+            </ComboBox.ItemsPanel>
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="viewModels:MappingSuggestionViewModel">
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                  <TextBlock Text="{Binding ColumnName}" FontWeight="SemiBold" />
+                  <TextBlock Grid.Column="1" Text="{Binding RoleText}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding RoleText}" />
+                </Grid>
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+          <TextBlock x:Name="NoCandidateMessage" Grid.Row="2"
+                     Text="列候補がありません。主画面で主回答列を手動指定できます。"
+                     IsVisible="{Binding #CandidateSelector.SelectedItem, Converter={x:Static converters:ObjectConverters.IsNull}}"
+                     TextWrapping="Wrap" VerticalAlignment="Center"
+                     AutomationProperties.AutomationId="MappingSettingsNoCandidate" />
+          <TextBox x:Name="CandidateOverview" Grid.Row="2" IsReadOnly="True" AcceptsReturn="True" AcceptsTab="False"
+                   IsVisible="{Binding #CandidateSelector.SelectedItem, Converter={x:Static converters:ObjectConverters.IsNotNull}}"
+                   TextWrapping="Wrap" VerticalAlignment="Stretch"
+                   ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                   TabIndex="12" AutomationProperties.AutomationId="MappingSettingsCandidateOverview"
+                   AutomationProperties.Name="選択した列候補の役割・見出し・補助列提案の全文・読取専用"
+                   ToolTip.Tip="候補の詳細を全文で確認できます。候補がない場合は主画面で主回答列を手動指定してください。">
+            <TextBox.Text>
+              <MultiBinding StringFormat="{}{0}&#10;{1}&#10;{2}">
+                <Binding Path="#CandidateSelector.((viewModels:MappingSuggestionViewModel)SelectedItem).RoleText" />
+                <Binding Path="#CandidateSelector.((viewModels:MappingSuggestionViewModel)SelectedItem).HeaderText" />
+                <Binding Path="#CandidateSelector.((viewModels:MappingSuggestionViewModel)SelectedItem).SupportText" />
+              </MultiBinding>
+            </TextBox.Text>
+          </TextBox>
+          <TextBlock x:Name="SuggestionStatus" Grid.Row="3" Text="{Binding SuggestionStatusText}"
+                     TextWrapping="Wrap" Classes="muted" AutomationProperties.AutomationId="MappingSettingsSuggestionStatus" />
+          <Button x:Name="ApplySuggestionsButton" Grid.Row="4" Content="候補一式を再適用"
+                  Command="{Binding ApplySuggestionsCommand}"
+                  IsEnabled="{Binding ., Converter={x:Static converters:ObjectConverters.IsNotNull}, FallbackValue=False}"
+                  HorizontalAlignment="Stretch" TabIndex="13" AutomationProperties.AutomationId="ApplyInputSuggestions"
+                  AutomationProperties.Name="X-02 の列候補一式を mapping へ再適用"
+                  ToolTip.Tip="選択候補1件だけではなく、このsheetの候補一式で設問と回答範囲を作り直します。手動のmapping・設問文は置き換わります。" />
+        </Grid>
+      </Border>
+    </Grid>
+
+    <Grid Grid.Row="2" RowDefinitions="Auto,44" ColumnDefinitions="*,2*" RowSpacing="4" ColumnSpacing="8">
+      <TextBlock x:Name="MappingValidationSummary" Grid.ColumnSpan="2" Text="{Binding ValidationSummary}"
+                 AutomationProperties.AutomationId="MappingSettingsValidationSummary"
+                 AutomationProperties.Name="入力全体の技術検証状態" />
+      <ComboBox x:Name="MappingValidationErrors" Grid.Row="1" ItemsSource="{Binding ValidationErrors}"
+                IsEnabled="{Binding HasTechnicalErrors, FallbackValue=False}" HorizontalAlignment="Stretch"
+                MaxDropDownHeight="264" PlaceholderText="技術エラーはありません" TabIndex="14"
+                AutomationProperties.AutomationId="MappingSettingsErrors"
+                AutomationProperties.Name="入力全体の技術エラー一覧"
+                ToolTip.Tip="全エラーから選択し、右側で対象ID・項目・内容の全文を確認します。">
+        <ComboBox.ItemTemplate>
+          <DataTemplate x:DataType="viewModels:InputValidationError">
+            <TextBlock Text="{Binding Code}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Message}" />
+          </DataTemplate>
+        </ComboBox.ItemTemplate>
+      </ComboBox>
+      <TextBox x:Name="MappingValidationDetail" Grid.Row="1" Grid.Column="1" IsReadOnly="True"
+               AcceptsReturn="True" AcceptsTab="False" TextWrapping="Wrap" VerticalAlignment="Stretch"
+               ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+               TabIndex="15" AutomationProperties.AutomationId="MappingSettingsErrorDetail"
+               AutomationProperties.Name="選択した技術エラーの対象・項目・内容全文・読取専用"
+               ToolTip.Tip="既存validatorの内容を表示します。他の設問や配点の問題は対応する主画面・設定で修正してください。">
+        <TextBox.Text>
+          <MultiBinding StringFormat="{}{0} / {1}&#10;{2}">
+            <Binding Path="#MappingValidationErrors.((viewModels:InputValidationError)SelectedItem).NodeId" />
+            <Binding Path="#MappingValidationErrors.((viewModels:InputValidationError)SelectedItem).Field" />
+            <Binding Path="#MappingValidationErrors.((viewModels:InputValidationError)SelectedItem).Message" />
+          </MultiBinding>
+        </TextBox.Text>
+      </TextBox>
+    </Grid>
+  </Grid>
+</UserControl>

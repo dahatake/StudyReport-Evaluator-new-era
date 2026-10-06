@@ -1,0 +1,258 @@
+<UserControl
+    x:Class="StudyReportEvaluator.App.Views.SpecialEvaluationSettingsView"
+    x:DataType="viewModels:QuantificationDesignViewModel"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="using:Avalonia.Data.Converters"
+    xmlns:viewModels="using:StudyReportEvaluator.App.ViewModels"
+    xmlns:views="using:StudyReportEvaluator.App.Views"
+    Background="{DynamicResource AppCanvasBrush}"
+    Foreground="{DynamicResource AppTextBrush}"
+    FontSize="14"
+    AutomationProperties.AutomationId="SpecialEvaluationSettingsView"
+    AutomationProperties.Name="固有評価の設定">
+  <UserControl.Styles>
+    <Style Selector="Button, ComboBox, CheckBox, TextBox, TabItem">
+      <Setter Property="MinHeight" Value="44" />
+      <Setter Property="MinWidth" Value="44" />
+      <Setter Property="FontSize" Value="14" />
+      <Setter Property="ToolTip.ShowOnDisabled" Value="True" />
+    </Style>
+    <Style Selector="ComboBoxItem">
+      <Setter Property="MinHeight" Value="44" />
+      <Setter Property="FontSize" Value="14" />
+    </Style>
+    <Style Selector="TextBlock.label">
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TextBlock.muted">
+      <Setter Property="Foreground" Value="{DynamicResource AppMutedTextBrush}" />
+    </Style>
+    <Style Selector="TextBox:focus-visible, ComboBox:focus-visible, CheckBox:focus-visible, TabItem:focus-visible">
+      <Setter Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
+      <Setter Property="BorderThickness" Value="3" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid Margin="8" RowDefinitions="Auto,Auto,*,Auto" RowSpacing="8"
+        KeyboardNavigation.TabNavigation="Continue">
+    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+      <TextBlock Text="設問" Classes="label" VerticalAlignment="Center" />
+      <ComboBox x:Name="QuestionSelector" Grid.Column="1"
+                ItemsSource="{Binding Questions}"
+                SelectedItem="{Binding SelectedQuestion, Mode=TwoWay}"
+                PlaceholderText="設問を選択" HorizontalAlignment="Stretch" TabIndex="0"
+                AutomationProperties.AutomationId="SpecialSettingsQuestions"
+                AutomationProperties.Name="固有評価を編集する設問"
+                ToolTip.Tip="固有評価を編集する設問を選びます。設問がない場合は入力画面で設問を用意してください。">
+        <ComboBox.ItemTemplate>
+          <DataTemplate x:DataType="viewModels:QuestionDesignItemViewModel">
+            <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis"
+                       ToolTip.Tip="{Binding DisplayName}" />
+          </DataTemplate>
+        </ComboBox.ItemTemplate>
+      </ComboBox>
+      <TextBlock Grid.Column="2" Text="{Binding SpecialPoints, StringFormat='固有配点 {0:G29} 点（主画面で変更）'}"
+                 VerticalAlignment="Center"
+                 AutomationProperties.AutomationId="SpecialSettingsPointsStatus"
+                 AutomationProperties.Name="固有配点の現在値・読取専用"
+                 ToolTip.Tip="配点は採点設計の主画面で変更します。0点では固有評価を実行せず、正の配点には有効な設問内の有効な固有項目が必要です。" />
+    </Grid>
+
+    <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8">
+      <TextBlock Text="固有項目" Classes="label" VerticalAlignment="Center" />
+      <ComboBox x:Name="SpecialSelector" Grid.Column="1"
+                x:DataType="viewModels:QuestionDesignItemViewModel"
+                DataContext="{Binding SelectedQuestion, DataType={x:Type viewModels:QuantificationDesignViewModel}}"
+                ItemsSource="{Binding SpecialEvaluations}"
+                SelectedItem="{Binding SelectedSpecialEvaluation, Mode=TwoWay}"
+                IsEnabled="{Binding ., Converter={x:Static converters:ObjectConverters.IsNotNull}, FallbackValue=False}"
+                PlaceholderText="固有項目を選択" HorizontalAlignment="Stretch" TabIndex="1"
+                AutomationProperties.AutomationId="SpecialSettingsItems"
+                AutomationProperties.Name="選択した設問の固有評価一覧"
+                ToolTip.Tip="この設問の固有項目を選ぶと、項目設定とPromptの編集対象が切り替わります。">
+        <ComboBox.ItemTemplate>
+          <DataTemplate x:DataType="viewModels:SpecialEvaluationDesignItemViewModel">
+            <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis"
+                       ToolTip.Tip="{Binding DisplayName}" />
+          </DataTemplate>
+        </ComboBox.ItemTemplate>
+      </ComboBox>
+      <Button Grid.Column="2" Content="追加" Command="{Binding SelectedQuestion.AddSpecialEvaluationCommand}"
+              IsEnabled="{Binding SelectedQuestion, Converter={x:Static converters:ObjectConverters.IsNotNull}}"
+              TabIndex="2" AutomationProperties.AutomationId="SpecialSettingsAdd"
+              AutomationProperties.Name="選択した設問へ固有評価を追加"
+              ToolTip.Tip="選択した設問へ0～1で定量化する固有項目を追加します。既存の配点は変更しません。" />
+      <Button Grid.Column="3" Content="複製" Command="{Binding SelectedQuestion.SelectedSpecialEvaluation.DuplicateCommand}"
+                IsEnabled="{Binding SelectedQuestion.SelectedSpecialEvaluation, Converter={x:Static converters:ObjectConverters.IsNotNull}, FallbackValue=False}"
+              TabIndex="3" AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedSpecialEvaluation.CardAutomationId, StringFormat='{}{0}-Duplicate'}"
+              AutomationProperties.Name="選択した固有評価を複製"
+              ToolTip.Tip="選択した固有項目を新しい一意な識別子で直後へ複製します。" />
+      <Button Grid.Column="4" Content="上へ" Command="{Binding SelectedQuestion.SelectedSpecialEvaluation.MoveUpCommand}"
+                IsEnabled="{Binding SelectedQuestion.SelectedSpecialEvaluation, Converter={x:Static converters:ObjectConverters.IsNotNull}, FallbackValue=False}"
+              TabIndex="4" AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedSpecialEvaluation.CardAutomationId, StringFormat='{}{0}-MoveUp'}"
+              AutomationProperties.Name="選択した固有評価を上へ移動"
+              ToolTip.Tip="選択した固有項目を同じ設問内で1つ前へ移動します。" />
+      <Button Grid.Column="5" Content="下へ" Command="{Binding SelectedQuestion.SelectedSpecialEvaluation.MoveDownCommand}"
+                IsEnabled="{Binding SelectedQuestion.SelectedSpecialEvaluation, Converter={x:Static converters:ObjectConverters.IsNotNull}, FallbackValue=False}"
+              TabIndex="5" AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedSpecialEvaluation.CardAutomationId, StringFormat='{}{0}-MoveDown'}"
+              AutomationProperties.Name="選択した固有評価を下へ移動"
+              ToolTip.Tip="選択した固有項目を同じ設問内で1つ後ろへ移動します。" />
+      <Button Grid.Column="6" Content="削除" Command="{Binding SelectedQuestion.SelectedSpecialEvaluation.DeleteCommand}"
+                IsEnabled="{Binding SelectedQuestion.SelectedSpecialEvaluation, Converter={x:Static converters:ObjectConverters.IsNotNull}, FallbackValue=False}"
+              TabIndex="6" AutomationProperties.AutomationId="{Binding SelectedQuestion.SelectedSpecialEvaluation.CardAutomationId, StringFormat='{}{0}-Delete'}"
+              AutomationProperties.Name="選択した固有評価を削除"
+              ToolTip.Tip="選択した固有項目をdraftから削除します。配点の自動変更は行いません。" />
+    </Grid>
+
+    <TextBlock Grid.Row="2" Text="設問が選択されていません。入力画面で設問を用意して、上の一覧から選んでください。"
+               IsVisible="{Binding SelectedQuestion, Converter={x:Static converters:ObjectConverters.IsNull}}"
+               TextWrapping="Wrap" VerticalAlignment="Center" HorizontalAlignment="Center"
+               AutomationProperties.AutomationId="SpecialSettingsNoQuestion" />
+    <ContentControl Grid.Row="2" Content="{Binding SelectedQuestion}"
+                    IsVisible="{Binding SelectedQuestion, Converter={x:Static converters:ObjectConverters.IsNotNull}}"
+                    HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+      <ContentControl.ContentTemplate>
+        <DataTemplate x:DataType="viewModels:QuestionDesignItemViewModel">
+          <Grid>
+            <TextBlock Text="固有項目が選択されていません。一覧から選ぶか「追加」で作成してください。固有配点は主画面で設定します。"
+                       IsVisible="{Binding SelectedSpecialEvaluation, Converter={x:Static converters:ObjectConverters.IsNull}}"
+                       TextWrapping="Wrap" VerticalAlignment="Center" HorizontalAlignment="Center"
+                       AutomationProperties.AutomationId="SpecialSettingsNoItem" />
+            <ContentControl Content="{Binding SelectedSpecialEvaluation}"
+                            IsVisible="{Binding SelectedSpecialEvaluation, Converter={x:Static converters:ObjectConverters.IsNotNull}}"
+                            HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+              <ContentControl.ContentTemplate>
+                <DataTemplate x:DataType="viewModels:SpecialEvaluationDesignItemViewModel">
+                  <Border Padding="8" CornerRadius="8" BorderThickness="1"
+                          Background="{DynamicResource AppSurfaceBrush}" BorderBrush="{DynamicResource AppBorderBrush}"
+                          AutomationProperties.AutomationId="{Binding CardAutomationId}"
+                          AutomationProperties.Name="{Binding DisplayName}"
+                          AutomationProperties.HelpText="{Binding ValidationText}"
+                          ToolTip.Tip="{Binding ValidationText}">
+                    <TabControl HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+                              TabIndex="7" KeyboardNavigation.TabNavigation="Continue"
+                                AutomationProperties.AutomationId="SpecialSettingsEditorTabs"
+                                AutomationProperties.Name="固有項目の編集表示切替"
+                                ToolTip.Tip="項目設定とPromptの表示だけを切り替えます。業務ステップは進みません。">
+                      <TabItem Header="項目設定" TabIndex="7"
+                               AutomationProperties.AutomationId="SpecialSettingsItemTab"
+                               AutomationProperties.Name="固有項目の設定"
+                               ToolTip.Tip="名前、有効状態、主対象列、補助列を編集します。">
+                        <Grid Margin="0,4,0,0" RowDefinitions="Auto,Auto,*" ColumnDefinitions="*,*"
+                              RowSpacing="8" ColumnSpacing="16">
+                          <Grid RowDefinitions="Auto,44" RowSpacing="4">
+                            <TextBlock Text="固有評価名" Classes="label" />
+                            <TextBox Grid.Row="1" Text="{Binding DisplayName, Mode=TwoWay}" TabIndex="10"
+                                     AutomationProperties.AutomationId="{Binding CardAutomationId, StringFormat='{}{0}-Name'}"
+                                     AutomationProperties.Name="固有評価名"
+                                     ToolTip.Tip="画面と結果でこの固有項目を識別する名前を入力します。" />
+                          </Grid>
+                          <Grid Grid.Column="1" RowDefinitions="Auto,44" RowSpacing="4">
+                            <TextBlock Text="評価範囲は 0～1 固定（変更不可）" Classes="muted"
+                                       AutomationProperties.AutomationId="SpecialSettingsFixedRange" />
+                            <CheckBox Grid.Row="1" Content="この固有評価を有効にする"
+                                      IsChecked="{Binding Enabled, Mode=TwoWay}" TabIndex="11"
+                                      AutomationProperties.AutomationId="{Binding CardAutomationId, StringFormat='{}{0}-Enabled'}"
+                                      AutomationProperties.Name="この固有評価を有効にする"
+                                      ToolTip.Tip="次回の評価対象に含めるか設定します。固有配点が0点の間は実行されません。" />
+                          </Grid>
+                          <Grid Grid.Row="1" RowDefinitions="Auto,44" RowSpacing="4">
+                            <TextBlock Text="主対象列" Classes="label" />
+                            <ComboBox Grid.Row="1" ItemsSource="{Binding AvailableColumnNames}"
+                                      SelectedItem="{Binding PrimarySourceColumn, Mode=TwoWay}"
+                                      HorizontalAlignment="Stretch" PlaceholderText="主対象列を選択" TabIndex="12"
+                                      AutomationProperties.AutomationId="{Binding CardAutomationId, StringFormat='{}{0}-Primary'}"
+                                      AutomationProperties.Name="固有評価の主対象列"
+                                      ToolTip.Tip="固有評価で0～1へ定量化する主対象列です。同じ列は補助列から除かれます。" />
+                          </Grid>
+                          <Grid Grid.Row="1" Grid.Column="1" RowDefinitions="Auto,44" ColumnDefinitions="*,Auto"
+                                RowSpacing="4" ColumnSpacing="8">
+                            <TextBlock Grid.ColumnSpan="2" Text="補助列（列ごとに選択・解除、0件以上）" Classes="label" />
+                            <ComboBox x:Name="SupportingColumnSelector" Grid.Row="1"
+                                      ItemsSource="{Binding SupportingColumns}" HorizontalAlignment="Stretch"
+                                      PlaceholderText="補助列を選択" TabIndex="13"
+                                      AutomationProperties.AutomationId="{Binding CardAutomationId, StringFormat='{}{0}-SupportingColumns'}"
+                                      AutomationProperties.Name="設定する補助列"
+                                      ToolTip.Tip="列を選び、隣のチェックで補助情報への追加・解除を切り替えます。一覧の「選択済み」で各列の状態を確認できます。">
+                              <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="viewModels:SpecialSupportingColumnSelectionViewModel">
+                                  <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="{Binding ColumnName}" />
+                                    <TextBlock Text="選択済み" IsVisible="{Binding IsSelected}" />
+                                    <TextBlock Text="主対象" IsVisible="{Binding !CanSelect}" />
+                                  </StackPanel>
+                                </DataTemplate>
+                              </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <CheckBox Grid.Row="1" Grid.Column="1" Content="補助に含める" TabIndex="14"
+                                      IsChecked="{Binding #SupportingColumnSelector.((viewModels:SpecialSupportingColumnSelectionViewModel)SelectedItem).IsSelected, Mode=TwoWay, FallbackValue=False}"
+                                      IsEnabled="{Binding #SupportingColumnSelector.((viewModels:SpecialSupportingColumnSelectionViewModel)SelectedItem).CanSelect, FallbackValue=False}"
+                                      AutomationProperties.AutomationId="{Binding CardAutomationId, StringFormat='{}{0}-SupportingSelected'}"
+                                      AutomationProperties.Name="選択列を固有評価の補助情報に含める"
+                                      ToolTip.Tip="選択中の列を同じ回答行の補助情報として追加・解除します。主対象と同じ列は選べません。" />
+                          </Grid>
+                        </Grid>
+                      </TabItem>
+                      <TabItem Header="Prompt" TabIndex="8"
+                               AutomationProperties.AutomationId="SpecialSettingsPromptTab"
+                               AutomationProperties.Name="固有評価Promptの編集とプレビュー"
+                               ToolTip.Tip="Prompt全文を編集し、合成値によるプレビューを確認します。AI処理は開始しません。">
+                        <Grid Margin="0,4,0,0" RowDefinitions="Auto,*" ColumnDefinitions="*,*"
+                              RowSpacing="4" ColumnSpacing="12">
+                          <TextBlock Text="Prompt全文（{回答} が必須）" Classes="label" />
+                          <TextBlock Grid.Column="1" Text="プレビュー（合成値・AI未実行）" Classes="label" />
+                          <TextBox Grid.Row="1" Text="{Binding PromptTemplate, Mode=TwoWay}"
+                                   AcceptsReturn="True" AcceptsTab="False" TextWrapping="Wrap"
+                                   VerticalAlignment="Stretch" TabIndex="20"
+                                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                   ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                   AutomationProperties.AutomationId="{Binding PromptAutomationId}"
+                                   AutomationProperties.Name="固有評価Prompt全文"
+                                   ToolTip.Tip="{}{回答} が必須です。{設問}、{補助情報}、{評価項目}、{最小点}、{最大点} も使用できます。文字としての波括弧は {{ と }} で記述します。範囲は0～1固定です。" />
+                          <TextBox Grid.Row="1" Grid.Column="1"
+                                   Text="{Binding PromptTemplate, Mode=OneWay, Converter={x:Static views:SpecialEvaluationSettingsView.PromptPreviewConverter}}"
+                                   IsReadOnly="True" AcceptsReturn="True" AcceptsTab="False" TextWrapping="Wrap"
+                                   VerticalAlignment="Stretch" TabIndex="21"
+                                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                   ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                   AutomationProperties.AutomationId="{Binding CardAutomationId, StringFormat='{}{0}-PromptPreview'}"
+                                   AutomationProperties.Name="固有評価Promptの合成値プレビュー・読取専用"
+                                   ToolTip.Tip="既存の固有評価用レンダラーで合成値を展開した表示です。評価項目は実送信時と同じ空文字、最小点0・最大点1です。入力Excelの回答読込やAI送信は行いません。" />
+                        </Grid>
+                      </TabItem>
+                    </TabControl>
+                  </Border>
+                </DataTemplate>
+              </ContentControl.ContentTemplate>
+            </ContentControl>
+          </Grid>
+        </DataTemplate>
+      </ContentControl.ContentTemplate>
+    </ContentControl>
+
+    <Grid Grid.Row="3" RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="4" ColumnSpacing="8"
+          AutomationProperties.AutomationId="SpecialSettingsValidation">
+      <TextBlock Grid.ColumnSpan="2" Text="{Binding ValidationSummary}"
+                 AutomationProperties.AutomationId="SpecialSettingsValidationSummary"
+                 AutomationProperties.Name="採点定義全体の検証状態" />
+      <ComboBox Grid.Row="1" ItemsSource="{Binding ValidationErrors}"
+                IsEnabled="{Binding HasTechnicalErrors}" PlaceholderText="設定エラーを選んで確認"
+                HorizontalAlignment="Stretch" TabIndex="30"
+                AutomationProperties.AutomationId="SpecialSettingsValidationErrors"
+                AutomationProperties.Name="採点定義全体の設定エラー一覧"
+                ToolTip.Tip="各エラーの対象ID・項目・内容を確認します。他の設問や配点のエラーも省略せず表示します。">
+        <ComboBox.ItemTemplate>
+          <DataTemplate x:DataType="viewModels:DesignValidationError">
+            <TextBlock Text="{Binding AccessibleText}" TextWrapping="Wrap"
+                       AutomationProperties.Name="{Binding AccessibleText}" ToolTip.Tip="{Binding AccessibleText}" />
+          </DataTemplate>
+        </ComboBox.ItemTemplate>
+      </ComboBox>
+      <Button Grid.Row="1" Grid.Column="1" Content="設定を再検証" Command="{Binding ValidateCommand}" TabIndex="31"
+              AutomationProperties.AutomationId="SpecialSettingsValidate"
+              AutomationProperties.Name="現在の採点定義を再検証"
+              ToolTip.Tip="既存の検証で配点・有効項目・列・Promptを確認します。保存・入力読込・認証・AI評価は行いません。" />
+    </Grid>
+  </Grid>
+</UserControl>

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "3.0",
+  "seed": 20260901,
+  "definition": {
+    "id": "SYN-DEF-001",
+    "name": "Synthetic minimal definition",
+    "revision": "1",
+    "sourceSheet": "Synthetic_Input",
+    "headerRow": 1,
+    "firstDataRow": 2,
+    "lastDataRow": 2,
+    "roundingDigits": 1,
+    "questions": [
+      {
+        "id": "SYN-Q-001",
+        "displayName": "Synthetic question 1",
+        "questionText": "Explain the synthetic topic.",
+        "primarySourceColumn": "F",
+        "supportingSourceColumns": [],
+        "weight": 1,
+        "enabled": true,
+        "evaluators": [
+          {
+            "id": "SYN-E-001-001",
+            "displayName": "Synthetic knowledge evaluator",
+            "type": "KNOWLEDGE_COVERAGE",
+            "weight": 1,
+            "range": { "minimum": 0, "maximum": 10 },
+            "builtInTemplateVersion": "knowledge-v1",
+            "customPromptTemplate": null,
+            "enabled": true,
+            "criteria": [
+              {
+                "id": "SYN-C-001-001-001",
+                "displayName": "Synthetic criterion 1",
+                "description": "Assess a fixed synthetic concept.",
+                "weight": 1,
+                "range": null,
+                "enabled": true
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

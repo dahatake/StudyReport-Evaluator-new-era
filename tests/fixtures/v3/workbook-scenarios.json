@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "3.0",
+  "seed": 20260901,
+  "sampleLike": {
+    "rowsIncludingHeader": 531,
+    "headerRow": 1,
+    "firstDataRow": 2,
+    "lastDataRow": 531,
+    "columns": 12,
+    "dimension": "A1:L531",
+    "sheetName": "Synthetic_Input",
+    "primarySuggestionColumns": ["F", "G", "H", "I", "J", "K"],
+    "initialUnselectedColumns": ["A", "B", "C", "D", "E", "L"],
+    "supportingSuggestion": { "primary": "J", "supporting": "K" },
+    "cellValuePattern": "SYNTHETIC-{row:D4}-{column}"
+  },
+  "singleCauseDefinitionNegatives": [
+    { "case": "blank-question-id", "mutation": "blankQuestionId", "expectedCode": "REQUIRED" },
+    { "case": "duplicate-global-id", "mutation": "duplicateGlobalId", "expectedCode": "DUPLICATE_ID" },
+    { "case": "equal-range", "mutation": "equalRange", "expectedCode": "SCORE_RANGE_INVALID" },
+    { "case": "reversed-range", "mutation": "reversedRange", "expectedCode": "SCORE_RANGE_INVALID" },
+    { "case": "zero-weight", "mutation": "zeroWeight", "expectedCode": "WEIGHT_MUST_BE_POSITIVE" },
+    { "case": "negative-weight", "mutation": "negativeWeight", "expectedCode": "WEIGHT_MUST_BE_POSITIVE" },
+    { "case": "no-enabled-question", "mutation": "noEnabledQuestion", "expectedCode": "ENABLED_QUESTION_REQUIRED" },
+    { "case": "no-enabled-evaluator", "mutation": "noEnabledEvaluator", "expectedCode": "ENABLED_EVALUATOR_REQUIRED" },
+    { "case": "no-enabled-criterion", "mutation": "noEnabledCriterion", "expectedCode": "ENABLED_CRITERION_REQUIRED" },
+    { "case": "duplicate-support", "mutation": "duplicateSupport", "expectedCode": "DUPLICATE_SUPPORTING_COLUMN" },
+    { "case": "support-equals-primary", "mutation": "supportEqualsPrimary", "expectedCode": "PRIMARY_COLUMN_REUSED" },
+    { "case": "row-limit", "mutation": "rowLimit", "expectedCode": "SELECTED_ROW_LIMIT_EXCEEDED" }
+  ],
+  "contentPolicy": {
+    "containsRealStudentAnswers": false,
+    "containsRealPrompts": false,
+    "containsCredentials": false,
+    "containsFilePaths": false
+  }
+}

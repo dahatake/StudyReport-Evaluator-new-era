@@ -1,0 +1,241 @@
+<UserControl
+    x:Class="StudyReportEvaluator.App.Views.ExecutionView"
+    x:DataType="viewModels:ExecutionViewModel"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:viewModels="using:StudyReportEvaluator.App.ViewModels"
+    xmlns:views="using:StudyReportEvaluator.App.Views"
+    xmlns:workflow="using:StudyReportEvaluator.App.Workflow"
+    xmlns:workspace="using:StudyReportEvaluator.App.Workspace"
+    Background="{DynamicResource AppCanvasBrush}"
+    Foreground="{DynamicResource AppTextBrush}"
+    FontSize="14"
+    AutomationProperties.AutomationId="ExecutionView"
+    AutomationProperties.Name="定量化の実行">
+  <UserControl.Styles>
+    <Style Selector="Button, TextBox, CheckBox, ListBoxItem">
+      <Setter Property="MinWidth" Value="44" />
+      <Setter Property="MinHeight" Value="44" />
+      <Setter Property="FontSize" Value="14" />
+      <Setter Property="ToolTip.ShowOnDisabled" Value="True" />
+    </Style>
+    <Style Selector="Button, TextBox, ListBoxItem">
+      <Setter Property="Padding" Value="8,4" />
+    </Style>
+    <Style Selector="TextBlock">
+      <Setter Property="FontSize" Value="14" />
+      <Setter Property="TextTrimming" Value="None" />
+    </Style>
+    <Style Selector="TextBox.single-line">
+      <Setter Property="Height" Value="44" />
+      <Setter Property="TextWrapping" Value="NoWrap" />
+      <Setter Property="AcceptsReturn" Value="False" />
+      <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />
+      <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Disabled" />
+    </Style>
+    <Style Selector="TextBlock.label">
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="TextBlock.muted">
+      <Setter Property="Foreground" Value="{DynamicResource AppMutedTextBrush}" />
+    </Style>
+    <Style Selector="Button.primary">
+      <Setter Property="Background" Value="{DynamicResource AppAccentBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource AppOnAccentBrush}" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Button.cancel">
+      <Setter Property="Background" Value="{DynamicResource CancelBackgroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource CancelTextBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource CancelBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Button:focus-visible, TextBox:focus-visible, CheckBox:focus-visible, ListBoxItem:focus-visible">
+      <Setter Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
+      <Setter Property="BorderThickness" Value="3" />
+    </Style>
+  </UserControl.Styles>
+
+  <!-- The normal 950 x 450 slot has a 346-DIP body. Only long content scrolls
+       locally; the effective settings and Start/Cancel never join that scroll. -->
+  <Grid x:Name="ExecutionLayout" RowDefinitions="44,*,44" RowSpacing="8"
+        KeyboardNavigation.TabNavigation="Continue">
+    <Grid x:Name="ExecutionSettingsSummary" ColumnDefinitions="84,*,108,84,72" ColumnSpacing="8">
+      <TextBlock Text="実行条件&#10;今回／次回" Classes="label" />
+      <TextBox x:Name="EffectiveModelTextBox" Grid.Column="1" Classes="single-line"
+               IsReadOnly="True" TabIndex="70"
+               AutomationProperties.AutomationId="ExecutionEffectiveModel"
+               AutomationProperties.Name="実行中または前回と次回のモデル・並列度・モデル上限・読取専用"
+               ToolTip.Tip="実行中／前回runは開始時の固定値、次回は現在の設定の実効値です。希望IDが使えなくても別モデルへ自動変更しません。上限が「SDK未公開」のモデル（autoなど）では、実行前のモデル相対の容量検証を行いません。全文を選択・コピーできます。" />
+      <TextBlock x:Name="ReasoningEffortStatus" Grid.Column="2" Classes="label"
+                 AutomationProperties.AutomationId="ExecutionReasoningEffort"
+                 AutomationProperties.Name="次回runで全評価に使うreasoning effort" />
+      <TextBlock x:Name="ConcurrencySummary" Grid.Column="3" Classes="label"
+                 Text="{Binding MaxConcurrency, StringFormat='次回並列&#10;{0} 件'}"
+                 ToolTip.Tip="{Binding ConcurrencyText}"
+                 AutomationProperties.AutomationId="ExecutionConcurrencySummary" />
+      <Button x:Name="ChangeExecutionSettingsButton" Grid.Column="4" Content="変更"
+              Click="HandleOpenSettings" TabIndex="3"
+              AutomationProperties.AutomationId="ExecutionChangeSettings"
+              AutomationProperties.Name="モデル・並列度・出力先の共通設定を開く"
+              ToolTip.Tip="共通設定で次回のモデル・並列度・出力先を変更できます。runtime診断も共通設定にあります。実行中のsnapshotは変わりません。" />
+    </Grid>
+
+    <!-- NFR-UX-003: the content panels are movable; the summary row above and the
+         Start/Interrupt row below stay fixed (FR-034). -->
+    <Grid x:Name="ExecutionBody" Grid.Row="1">
+      <workspace:PanelWorkspace x:Name="ExecutionWorkspace" ScreenKey="Step.Execution"
+                                AutomationProperties.AutomationId="Step.Execution.Workspace"
+                                AutomationProperties.Name="実行画面のパネル">
+        <workspace:WorkspacePanel PanelId="Execution.Conditions" Title="実行条件・出力先"
+                                  MinContentWidth="300" MinContentHeight="164">
+          <Grid x:Name="ExecutionConditionsPanel" RowDefinitions="44,*,Auto,44,44" RowSpacing="4">
+            <Grid ColumnDefinitions="110,*,Auto" ColumnSpacing="8">
+              <TextBlock x:Name="OutputDirectorySource" Classes="label" />
+              <TextBox x:Name="EffectiveOutputDirectoryTextBox" Grid.Column="1" Classes="single-line"
+                   Text="{Binding OutputDirectory, Mode=OneWay}" IsReadOnly="True" PlaceholderText="入力後に決定"
+                   TabIndex="71" AutomationProperties.AutomationId="ExecutionEffectiveOutputDirectory"
+                   AutomationProperties.Name="次回新規runの実効出力先・読取専用"
+                   ToolTip.Tip="次回新規runの実効出力先です。今回／前回runの出力条件とは別です。再開には左のpartialパスを使用します。長い値は欄内を横スクロールし、全文を選択・コピーできます。" />
+              <ContentControl Grid.Column="2" workspace:WorkspacePanel.IsHeaderSlot="True" />
+            </Grid>
+            <ScrollViewer x:Name="ExecutionConditionsScroll" Grid.Row="1"
+                          HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+              <StackPanel Spacing="4">
+                <TextBox x:Name="CurrentRunOutputTextBox" Classes="single-line"
+                     Text="{Binding CurrentRunOutputSummary, Mode=OneWay}" IsReadOnly="True"
+                     IsVisible="{Binding HasCurrentRun, FallbackValue=False}" TabIndex="72"
+                     AutomationProperties.AutomationId="ExecutionCurrentRunOutput"
+                     AutomationProperties.Name="今回または前回runの固定した出力条件・読取専用"
+                     ToolTip.Tip="実際のrequestに固定した新規出力先または再開元です。取消・完了後も保持します。予約パスやファイル作成完了を示す値ではありません。全文を選択・コピーできます。" />
+                <TextBlock x:Name="PlanSummaryLabel" Text="次回の実行予定（送信済み件数ではありません）" FontWeight="SemiBold" TextWrapping="Wrap" />
+                <TextBlock x:Name="PlanSummaryText" Text="{Binding PlanSummary}" TextWrapping="Wrap"
+                       AutomationProperties.AutomationId="ExecutionPlanSummary"
+                       ToolTip.Tip="設計から求める予定単位数とretry込み上限です。実測の送信回数ではありません。実行開始後のdraft編集は次回だけに反映されます。" />
+              </StackPanel>
+            </ScrollViewer>
+            <TextBlock x:Name="ReservedPathsLabel" Grid.Row="2" Text="予約名（ファイル作成済みとは限りません）" Classes="muted" />
+            <Grid Grid.Row="3" ColumnDefinitions="110,*" ColumnSpacing="8">
+          <TextBlock Text="final（予約名）" Classes="label" />
+          <TextBox x:Name="ReservedFinalPathTextBox" Grid.Column="1" Classes="single-line"
+                   Text="{Binding ReservedFinalPath, Mode=OneWay}" IsReadOnly="True" PlaceholderText="run開始時に予約"
+                   TabIndex="75" AutomationProperties.AutomationId="ExecutionReservedFinalPath"
+                   AutomationProperties.Name="finalの予約パス・作成完了とは別・読取専用"
+                   ToolTip.Tip="finalの予約名です。作成・検証の成否は実行状態で確認してください。長いパスも全文を選択・コピーできます。" />
+        </Grid>
+            <Grid Grid.Row="4" ColumnDefinitions="110,*" ColumnSpacing="8">
+          <TextBlock Text="partial（予約名）" Classes="label" />
+          <TextBox x:Name="PartialPathTextBox" Grid.Column="1" Classes="single-line"
+                   Text="{Binding PartialPath, Mode=OneWay}" IsReadOnly="True" PlaceholderText="run開始時に予約"
+                   TabIndex="76" AutomationProperties.AutomationId="ExecutionPartialPath"
+                   AutomationProperties.Name="partial checkpointの予約パス・保存完了とは別・読取専用"
+                   ToolTip.Tip="partial checkpointの予約名です。保存の成否は実行状態で確認してください。長いパスも全文を選択・コピーできます。" />
+        </Grid>
+          </Grid>
+        </workspace:WorkspacePanel>
+        <workspace:WorkspacePanel PanelId="Execution.Progress" Title="進捗・実測・速報値"
+                                  MinContentWidth="360" MinContentHeight="150">
+          <Grid x:Name="ExecutionProgressPanel">
+            <Grid x:Name="ExecutionProgressBody" RowDefinitions="3*,4*" RowSpacing="4">
+              <ScrollViewer x:Name="ExecutionProgressScroll"
+                            HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                <StackPanel Spacing="4">
+                  <TextBlock x:Name="RunStatusSummary" Text="{Binding RunStatusText}" TextWrapping="Wrap"
+                       AutomationProperties.AutomationId="ExecutionRunStatus" />
+                  <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+              <TextBlock x:Name="ExecutionStage" Text="{Binding StageText}" Classes="label"
+                         AutomationProperties.AutomationId="ExecutionStage" />
+              <ProgressBar x:Name="RunProgressBar" Grid.Column="1" Minimum="0"
+                           Maximum="{Binding ProgressTotal}" Value="{Binding ProgressCompleted}"
+                           Height="10" VerticalAlignment="Center"
+                           AutomationProperties.AutomationId="ExecutionProgress"
+                           AutomationProperties.Name="処理単位の完了進捗・送信回数とは別" />
+            </Grid>
+                  <TextBlock x:Name="OperationProgressSummary" Text="{Binding ProgressText, StringFormat='処理単位: {0}'}" TextWrapping="Wrap"
+                       AutomationProperties.AutomationId="ExecutionOperationProgress"
+                       ToolTip.Tip="報告された処理単位の完了・実行中の件数です。学生行数やAIへの送信回数ではありません。" />
+                  <TextBlock x:Name="DurableProgressSummary" Text="{Binding DurableProgressText, StringFormat='実測: {0}'}" TextWrapping="Wrap"
+                       AutomationProperties.AutomationId="ExecutionDurableProgress"
+                       ToolTip.Tip="実行中に報告された参照回答と学生行の進捗です。予定単位数や送信回数とは別です。" />
+                </StackPanel>
+              </ScrollViewer>
+              <Grid x:Name="ExecutionLivePreview" Grid.Row="1" RowDefinitions="Auto,*" RowSpacing="4"
+              AutomationProperties.AutomationId="ExecutionLivePreview"
+              AutomationProperties.Name="速報値・Excelの行ごとの対象の文字列とPromptと定量値">
+          <TextBlock x:Name="LivePreviewHeading" Text="{Binding LivePreview.HeadingText}" Classes="label"
+                     AutomationProperties.AutomationId="ExecutionLivePreviewHeading"
+                     ToolTip.Tip="AIまたはローカル計算が返した生の値で、最終評点ではありません。配点とFinalScoreはExcel数式が計算します。文字列・Prompt・理由は画面だけに表示し、保存しません。" />
+          <Grid Grid.Row="1" ColumnDefinitions="2*,3*" ColumnSpacing="6">
+            <ListBox x:Name="LivePreviewRowsList" ItemsSource="{Binding LivePreview.Rows}"
+                     SelectedItem="{Binding LivePreview.SelectedRow, Mode=TwoWay}" TabIndex="73"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     AutomationProperties.AutomationId="ExecutionLivePreviewList"
+                     AutomationProperties.Name="速報値・Excelの学生行の一覧（全件）"
+                     ToolTip.Tip="行を選ぶと右に対象の文字列・Prompt・定量値を表示します。選ばない場合は評価中の行を表示します。矢印キーでも選べます。">
+              <ListBox.ItemsPanel>
+                <ItemsPanelTemplate><VirtualizingStackPanel /></ItemsPanelTemplate>
+              </ListBox.ItemsPanel>
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="viewModels:LivePreviewRowViewModel">
+                  <StackPanel AutomationProperties.Name="{Binding AutomationName}">
+                    <TextBlock Text="{Binding Label}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding StateLine}" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding ValueSummary}" Classes="muted" TextTrimming="CharacterEllipsis" />
+                  </StackPanel>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+            <TextBox x:Name="LivePreviewDetail" Grid.Column="1" IsReadOnly="True" TabIndex="74"
+                     Text="{Binding LivePreview.DetailText, Mode=OneWay}"
+                     AcceptsReturn="True" TextWrapping="Wrap" VerticalAlignment="Stretch"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     AutomationProperties.AutomationId="ExecutionLivePreviewDetail"
+                     AutomationProperties.Name="選択した行の対象の文字列・Prompt・定量値の全文・読取専用"
+                     ToolTip.Tip="対象の文字列・Prompt・定量値・理由です。スクロールと全文の選択・コピーができます。" />
+          </Grid>
+              </Grid>
+            </Grid>
+          </Grid>
+        </workspace:WorkspacePanel>
+        <workspace:WorkspacePanel PanelId="Execution.Cost" Title="コスト・ログ"
+                                  MinContentWidth="260" MinContentHeight="160">
+          <views:JobCostView x:Name="ExecutionCostView" DataContext="{Binding Cost}"
+                             AutomationScope="ExecutionCost" />
+        </workspace:WorkspacePanel>
+      </workspace:PanelWorkspace>
+    </Grid>
+
+    <Grid x:Name="ExecutionActions" Grid.Row="2" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+      <Grid ColumnDefinitions="*,2*" ColumnSpacing="8">
+      <TextBlock x:Name="ExecutionValidationStatus" Text="{Binding ValidationSummary}" Classes="label"
+                 AutomationProperties.AutomationId="ExecutionValidationStatus" />
+      <CheckBox x:Name="ExecutionCostToggle" Grid.Column="1" MinHeight="44"
+                HorizontalContentAlignment="Stretch" IsChecked="{Binding Cost.IsExpanded, Mode=TwoWay}"
+                TabIndex="63"
+                AutomationProperties.AutomationId="ExecutionCostToggle"
+                AutomationProperties.Name="コスト詳細とジョブログを表示。オフで進捗に戻る"
+                ToolTip.Tip="{Binding Cost.SummaryText}">
+        <TextBlock Text="{Binding Cost.SummaryText}" TextTrimming="CharacterEllipsis"
+                   AutomationProperties.AutomationId="ExecutionCostSummary"
+                   AutomationProperties.Name="{Binding Cost.SummaryText}" />
+      </CheckBox>
+      </Grid>
+      <Button x:Name="StartRunButton" Grid.Column="1" Classes="primary" Content="定量化を開始"
+              Command="{Binding StartCommand}" MinWidth="144" TabIndex="61"
+              HotKey="Ctrl+Enter" AutomationProperties.AcceleratorKey="Ctrl+Enter"
+              AutomationProperties.AutomationId="StartQuantification"
+              AutomationProperties.Name="現在の設計 snapshot で定量化を開始"
+              ToolTip.Tip="現在の入力・設計・実効モデル・並列度・出力条件を固定して明示実行します。技術的な問題は左の一覧で確認してください。" />
+            <Button x:Name="CancelRunButton" Grid.Column="2" Classes="cancel" Content="中断"
+              Command="{Binding CancelCommand}" MinWidth="88" TabIndex="62"
+              HotKey="Ctrl+OemPeriod" AutomationProperties.AcceleratorKey="Ctrl+."
+              AutomationProperties.AutomationId="CancelQuantification"
+              AutomationProperties.Name="定量化を中断して保存済みの部分結果を保持"
+              AutomationProperties.HelpText="新規送信を停止し、部分結果の保存を待ちます。途中の行は再開時に最初から評価します。"
+              ToolTip.Tip="破棄せず中断します。新規送信を停止し、部分結果の保存を待ちます。途中の行は再開時に最初から評価します。ログインの取消とは別の操作です。" />
+    </Grid>
+  </Grid>
+</UserControl>

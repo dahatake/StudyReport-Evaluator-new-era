@@ -1,0 +1,6 @@
+{
+    "python-envs.defaultEnvManager": "ms-python.python:system",
+    "github.copilot.chat.summarizeAgentConversationHistory.enabled": true,
+    "github.copilot.chat.summarizeAgentConversationHistoryThreshold": 0.5,
+    "chat.agent.maxRequests": 50
+}

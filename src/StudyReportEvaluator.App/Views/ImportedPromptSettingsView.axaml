@@ -1,0 +1,207 @@
+<UserControl
+    x:Class="StudyReportEvaluator.App.Views.ImportedPromptSettingsView"
+    x:DataType="viewModels:QuantificationDesignViewModel"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:viewModels="using:StudyReportEvaluator.App.ViewModels"
+    Background="{DynamicResource AppCanvasBrush}"
+    Foreground="{DynamicResource AppTextBrush}"
+    FontSize="14"
+    AutomationProperties.AutomationId="ImportedPromptSettingsView"
+    AutomationProperties.Name="読込Promptの設定">
+  <UserControl.Styles>
+    <Style Selector="TextBlock">
+      <Setter Property="FontSize" Value="14" />
+    </Style>
+    <Style Selector="TextBlock.label">
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="ComboBox">
+      <Setter Property="MinWidth" Value="44" />
+      <Setter Property="MinHeight" Value="44" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="ToolTip.ShowOnDisabled" Value="True" />
+    </Style>
+    <Style Selector="ComboBoxItem">
+      <Setter Property="MinHeight" Value="44" />
+    </Style>
+    <Style Selector="ListBoxItem">
+      <Setter Property="MinHeight" Value="44" />
+      <Setter Property="Padding" Value="8,4" />
+    </Style>
+    <Style Selector="TextBox:focus-visible">
+      <Setter Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
+      <Setter Property="BorderThickness" Value="3" />
+    </Style>
+    <Style Selector="ComboBox:focus-visible">
+      <Setter Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
+      <Setter Property="BorderThickness" Value="3" />
+    </Style>
+    <Style Selector="ListBox:focus-visible">
+      <Setter Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
+      <Setter Property="BorderThickness" Value="3" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid Margin="12" RowDefinitions="Auto,*,Auto,Auto" RowSpacing="8"
+        KeyboardNavigation.TabNavigation="Local">
+    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">
+      <TextBlock
+          x:Name="ImportedPromptCountText"
+          Text="{Binding ImportedPrompts.Count, StringFormat='読込Prompt {0} 件', FallbackValue='読込Prompt 0 件'}"
+          FontSize="18" FontWeight="SemiBold"
+          AutomationProperties.AutomationId="ImportedPromptCount"
+          AutomationProperties.Name="読み込んだPromptの件数" />
+      <TextBlock Grid.Column="1" VerticalAlignment="Center" TextWrapping="Wrap"
+                 Text="選択だけでは反映しません。適用は本文のコピーのみです。"
+                 Foreground="{DynamicResource AppMutedTextBrush}" />
+    </Grid>
+
+    <Grid Grid.Row="1" ColumnDefinitions="240,*" ColumnSpacing="12">
+      <Grid RowDefinitions="Auto,*" RowSpacing="4">
+        <TextBlock Text="ファイル名（起動引数の順）" Classes="label" />
+        <ListBox
+            x:Name="ImportedPromptList" Grid.Row="1"
+            ItemsSource="{Binding ImportedPrompts}"
+            SelectedItem="{Binding SelectedImportedPrompt, Mode=TwoWay}"
+            MinHeight="44" TabIndex="0"
+            ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+            ScrollViewer.VerticalScrollBarVisibility="Auto"
+            AutomationProperties.AutomationId="ImportedPrompts"
+            AutomationProperties.Name="起動時に読み込んだPrompt一覧"
+            ToolTip.Tip="--promptの指定順です。ファイル名からの自動割当や、選択だけでの適用は行いません。">
+          <ListBox.ItemsPanel>
+            <ItemsPanelTemplate><VirtualizingStackPanel /></ItemsPanelTemplate>
+          </ListBox.ItemsPanel>
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="viewModels:ImportedPromptViewModel">
+              <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis"
+                         AutomationProperties.Name="{Binding DisplayName}"
+                         ToolTip.Tip="{Binding DisplayName}" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </Grid>
+      <Grid Grid.Column="1" RowDefinitions="Auto,*" RowSpacing="4">
+        <TextBlock Text="本文（読取専用）" Classes="label" />
+        <TextBox
+            x:Name="ImportedPromptPreview" Grid.Row="1"
+            Text="{Binding ImportedPromptPreview, Mode=OneWay}"
+            IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap"
+            MinHeight="44" TabIndex="1"
+            ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+            ScrollViewer.VerticalScrollBarVisibility="Auto"
+            AutomationProperties.AutomationId="ImportedPromptPreview"
+            AutomationProperties.Name="選択した読込Promptの全文（読取専用）"
+            ToolTip.Tip="原文の全文を表示します。長文はこの欄の中でスクロールできます。適用後の編集は通常評価または固有評価で行います。" />
+      </Grid>
+    </Grid>
+
+    <Grid Grid.Row="2" ColumnDefinitions="*,*,2*" ColumnSpacing="8">
+      <StackPanel Spacing="4">
+        <TextBlock Text="適用先の設問" Classes="label" />
+        <ComboBox
+            x:Name="ImportedPromptQuestionSelector"
+            ItemsSource="{Binding Questions}"
+            SelectedItem="{Binding SelectedQuestion, Mode=TwoWay}"
+            TabIndex="2"
+            AutomationProperties.AutomationId="ImportedPromptQuestion"
+            AutomationProperties.Name="Prompt適用先の設問"
+            ToolTip.Tip="Promptをコピーする設問を選びます。表示ページによらず、すべての設問を選べます。">
+          <ComboBox.ItemTemplate>
+            <DataTemplate x:DataType="viewModels:QuestionDesignItemViewModel">
+              <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis"
+                         ToolTip.Tip="{Binding DisplayName}" />
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
+      </StackPanel>
+      <StackPanel Grid.Column="1" Spacing="4">
+        <TextBlock Text="適用先の種類" Classes="label" />
+        <ComboBox
+            x:Name="ImportedPromptTargetSelector"
+            ItemsSource="{Binding AvailablePromptTargets}"
+            SelectedItem="{Binding SelectedPromptTargetChoice, Mode=TwoWay}"
+            TabIndex="3"
+            AutomationProperties.AutomationId="ImportedPromptTarget"
+            AutomationProperties.Name="Promptを適用する対象の種類"
+            ToolTip.Tip="通常のCustom評価方法、または固有評価のどちらに適用するかを選びます。">
+          <ComboBox.ItemTemplate>
+            <DataTemplate x:DataType="viewModels:ImportedPromptTargetChoice">
+              <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis"
+                         ToolTip.Tip="{Binding DisplayName}" />
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
+      </StackPanel>
+      <ContentControl Grid.Column="2" Content="{Binding SelectedQuestion}"
+                      HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+        <ContentControl.ContentTemplate>
+          <DataTemplate x:DataType="viewModels:QuestionDesignItemViewModel">
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="4">
+              <TextBlock Text="通常評価（Customのみ）" Classes="label" />
+              <TextBlock Grid.Column="1" Text="固有評価" Classes="label" />
+              <ComboBox
+                  Grid.Row="1"
+                  ItemsSource="{Binding Evaluators}"
+                  SelectedItem="{Binding SelectedEvaluator, Mode=TwoWay}"
+                  TabIndex="4"
+                  AutomationProperties.AutomationId="{Binding CardAutomationId, StringFormat='{}{0}-ImportedPromptEvaluator'}"
+                  AutomationProperties.Name="{Binding DisplayName, StringFormat='{}{0} の通常評価の適用先'}"
+                  ToolTip.Tip="通常評価へ適用する場合の対象です。Knowledgeは読取専用のため適用できません。">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate x:DataType="viewModels:EvaluatorDesignItemViewModel">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="4">
+                      <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis"
+                                 ToolTip.Tip="{Binding DisplayName}" />
+                      <TextBlock Grid.Column="1" Text="{Binding TypeDisplayName}" />
+                    </Grid>
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+              <ComboBox
+                  Grid.Row="1" Grid.Column="1"
+                  ItemsSource="{Binding SpecialEvaluations}"
+                  SelectedItem="{Binding SelectedSpecialEvaluation, Mode=TwoWay}"
+                  TabIndex="5"
+                  AutomationProperties.AutomationId="{Binding CardAutomationId, StringFormat='{}{0}-ImportedPromptSpecialEvaluation'}"
+                  AutomationProperties.Name="{Binding DisplayName, StringFormat='{}{0} の固有評価の適用先'}"
+                  ToolTip.Tip="固有評価へ適用する場合の対象です。配点や有効状態はこの画面では変更しません。">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate x:DataType="viewModels:SpecialEvaluationDesignItemViewModel">
+                    <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis"
+                               ToolTip.Tip="{Binding DisplayName}" />
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+            </Grid>
+          </DataTemplate>
+        </ContentControl.ContentTemplate>
+      </ContentControl>
+    </Grid>
+
+    <Grid Grid.Row="3" ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="4">
+      <TextBlock
+          x:Name="SelectedPromptTargetSummary"
+          Text="{Binding SelectedPromptTargetSummary, FallbackValue='設問を選択してください'}"
+          TextTrimming="CharacterEllipsis" FontWeight="SemiBold"
+          AutomationProperties.AutomationId="SelectedPromptTargetSummary"
+          AutomationProperties.Name="{Binding SelectedPromptTargetSummary, FallbackValue='設問を選択してください'}"
+          ToolTip.Tip="{Binding SelectedPromptTargetSummary}" />
+      <TextBlock
+          x:Name="ImportedPromptApplyStatus" Grid.Row="1" TextWrapping="Wrap"
+          AutomationProperties.AutomationId="ImportedPromptApplyStatus"
+          AutomationProperties.Name="Promptの適用状態"
+          Foreground="{DynamicResource AppMutedTextBrush}" />
+      <Button
+          x:Name="ApplyImportedPromptButton" Grid.Column="1" Grid.RowSpan="2"
+          Content="Promptを適用" Command="{Binding ApplyImportedPromptCommand}"
+          IsEnabled="{Binding CanApplyImportedPrompt, FallbackValue=False}"
+          MinWidth="44" MinHeight="44" TabIndex="6" VerticalAlignment="Center"
+          AutomationProperties.AutomationId="ApplyImportedPrompt"
+          AutomationProperties.Name="選択Promptを選択した適用先へコピー"
+          ToolTip.ShowOnDisabled="True"
+          ToolTip.Tip="表示中の適用先へ本文をコピーします。一覧は保持され、同じPromptを何度でも再利用できます。保存・ステップ移動・AI処理は行いません。" />
+    </Grid>
+  </Grid>
+</UserControl>
